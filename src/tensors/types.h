@@ -13,4 +13,6 @@ struct Tensor{
 
 struct Tensor* create_tensor(int* shape, int ndim, enum DType dtype);
 
+void free_tensor(struct Tensor* tensor);
+
 #endif
