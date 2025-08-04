@@ -68,4 +68,67 @@ Tensor<T> tensor_div(const Tensor<T>& a, const Tensor<T>& b) {
     return result;
 }
 
+
+template<typename T, typename ScalarType>
+Tensor<T> tensor_scalar_add(const Tensor<T>& a, ScalarType scalar) {
+    Tensor<T> result(a.shape);
+    for (int i = 0; i < a.size; ++i) {
+        result.data[i] = a.data[i] + static_cast<T>(scalar);
+    }
+    return result;
+}
+
+template<typename T, typename ScalarType>
+Tensor<T> tensor_scalar_sub(const Tensor<T>& a, ScalarType scalar) {
+    Tensor<T> result(a.shape);
+    for (int i = 0; i < a.size; ++i) {
+        result.data[i] = a.data[i] - static_cast<T>(scalar);
+    }
+    return result;
+}
+
+template<typename T, typename ScalarType>
+Tensor<T> scalar_tensor_sub(ScalarType scalar, const Tensor<T>& a) {
+    Tensor<T> result(a.shape);
+    for (int i = 0; i < a.size; ++i) {
+        result.data[i] = static_cast<T>(scalar) - a.data[i];
+    }
+    return result;
+}
+
+
+template<typename T, typename ScalarType>
+Tensor<T> tensor_scalar_mul(const Tensor<T>& a, ScalarType scalar) {
+    Tensor<T> result(a.shape);
+    for (int i = 0; i < a.size; ++i) {
+        result.data[i] = a.data[i] * static_cast<T>(scalar);
+    }
+    return result;
+}
+
+template<typename T, typename ScalarType>
+Tensor<T> tensor_scalar_div(const Tensor<T>& a, ScalarType scalar) {
+    if (static_cast<T>(scalar) == T(0)) {
+        throw std::runtime_error("ERROR: Division by zero is not allowed");
+    }
+    Tensor<T> result(a.shape);
+    for (int i = 0; i < a.size; ++i) {
+        result.data[i] = a.data[i] / static_cast<T>(scalar);
+    }
+    return result;
+}
+
+template<typename T, typename ScalarType>
+Tensor<T> scalar_tensor_div(ScalarType scalar, const Tensor<T>& a) {
+    Tensor<T> result(a.shape);
+    for (int i = 0; i < a.size; ++i) {
+        if (a.data[i] == T(0)) {
+            throw std::runtime_error("ERROR: Division by zero is not allowed");
+        }
+        result.data[i] = static_cast<T>(scalar) / a.data[i];
+    }
+    return result;
+}
+
+
 #endif
