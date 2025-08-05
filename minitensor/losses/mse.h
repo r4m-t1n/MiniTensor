@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "tensors/tensor.h"
+#include "tensors/tensor_ops.h"
 
 template<typename T>
 T mse_loss(const Tensor<T>& y, const Tensor<T>& y_hat) {
