@@ -10,7 +10,7 @@ void check_tensor_validity(const Tensor<T>& a, const Tensor<T>& b) {
     if (a.ndim != b.ndim) {
         throw std::invalid_argument(
             "ERROR: Shapes are not the same: " +
-            std::to_string(n.ndim) + " and " + std::to_string(b.ndim)
+            std::to_string(a.ndim) + " and " + std::to_string(b.ndim)
         );
     }
     for (int i = 0; i < a.ndim; ++i) {
