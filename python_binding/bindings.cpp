@@ -43,8 +43,20 @@ PYBIND11_MODULE(minitensor, m) {
         .def_readwrite("ndim", &Tensor<float>::ndim)
         .def_readwrite("size", &Tensor<float>::size)
         .def("to_list", &get_tensor_data<float>)
-        .def("__repr__", &tensor_repr<float>);
-    
+        .def("__repr__", &tensor_repr<float>)
+        .def(py::self + py::self)
+        .def(py::self - py::self)
+        .def(py::self * py::self)
+        .def(py::self / py::self)
+        .def(py::self + float())
+        .def(py::self - float())
+        .def(py::self * float())
+        .def(py::self / float())
+        .def(float() + py::self)
+        .def(float() - py::self)
+        .def(float() * py::self)
+        .def(float() / py::self);
+
     m_float.def("add", &tensor_add<float>);
     m_float.def("sub", &tensor_sub<float>);
     m_float.def("mul", &tensor_mul<float>);
@@ -65,8 +77,20 @@ PYBIND11_MODULE(minitensor, m) {
         .def_readwrite("ndim", &Tensor<double>::ndim)
         .def_readwrite("size", &Tensor<double>::size)
         .def("to_list", &get_tensor_data<double>)
-        .def("__repr__", &tensor_repr<double>);
-    
+        .def("__repr__", &tensor_repr<double>)
+        .def(py::self + py::self)
+        .def(py::self - py::self)
+        .def(py::self * py::self)
+        .def(py::self / py::self)
+        .def(py::self + double())
+        .def(py::self - double())
+        .def(py::self * double())
+        .def(py::self / double())
+        .def(double() + py::self)
+        .def(double() - py::self)
+        .def(double() * py::self)
+        .def(double() / py::self);
+
     m_double.def("add", &tensor_add<double>);
     m_double.def("sub", &tensor_sub<double>);
     m_double.def("mul", &tensor_mul<double>);
@@ -78,7 +102,7 @@ PYBIND11_MODULE(minitensor, m) {
     m_double.def("div_scalar", &tensor_scalar_div<double, double>);
 
     m_double.def("mse_loss", &mse_loss<double>);
-    
+
     auto m_int = m.def_submodule("int32");
     py::class_<Tensor<int>>(m_int, "Tensor")
         .def(py::init<const std::vector<int>&, const std::vector<int>&>())
@@ -87,7 +111,19 @@ PYBIND11_MODULE(minitensor, m) {
         .def_readwrite("ndim", &Tensor<int>::ndim)
         .def_readwrite("size", &Tensor<int>::size)
         .def("to_list", &get_tensor_data<int>)
-        .def("__repr__", &tensor_repr<int>);
+        .def("__repr__", &tensor_repr<int>)
+        .def(py::self + py::self)
+        .def(py::self - py::self)
+        .def(py::self * py::self)
+        .def(py::self / py::self)
+        .def(py::self + int())
+        .def(py::self - int())
+        .def(py::self * int())
+        .def(py::self / int())
+        .def(int() + py::self)
+        .def(int() - py::self)
+        .def(int() * py::self)
+        .def(int() / py::self);
 
     m_int.def("add", &tensor_add<int>);
     m_int.def("sub", &tensor_sub<int>);

@@ -130,5 +130,63 @@ Tensor<T> scalar_tensor_div(ScalarType scalar, const Tensor<T>& a) {
     return result;
 }
 
+template<typename T>
+Tensor<T> operator+(const Tensor<T>& t1, const Tensor<T>& t2) {
+    return tensor_add(t1, t2);
+}
+
+template<typename T>
+Tensor<T> operator-(const Tensor<T>& t1, const Tensor<T>& t2) {
+    return tensor_sub(t1, t2);
+}
+
+template<typename T>
+Tensor<T> operator*(const Tensor<T>& t1, const Tensor<T>& t2) {
+    return tensor_mul(t1, t2);
+}
+
+template<typename T>
+Tensor<T> operator/(const Tensor<T>& t1, const Tensor<T>& t2) {
+    return tensor_div(t1, t2);
+}
+
+template<typename T, typename U>
+Tensor<T> operator+(const Tensor<T>& tensor, U scalar) {
+    return tensor_scalar_add(tensor, scalar);
+}
+
+template<typename T, typename U>
+Tensor<T> operator-(const Tensor<T>& tensor, U scalar) {
+    return tensor_scalar_sub(tensor, scalar);
+}
+
+template<typename T, typename U>
+Tensor<T> operator*(const Tensor<T>& tensor, U scalar) {
+    return tensor_scalar_mul(tensor, scalar);
+}
+
+template<typename T, typename U>
+Tensor<T> operator/(const Tensor<T>& tensor, U scalar) {
+    return tensor_scalar_div(tensor, scalar);
+}
+
+template<typename T, typename U>
+Tensor<T> operator+(U scalar, const Tensor<T>& tensor) {
+    return tensor_scalar_add(tensor, scalar);
+}
+
+template<typename T, typename U>
+Tensor<T> operator-(U scalar, const Tensor<T>& tensor) {
+    return scalar_tensor_sub(scalar, tensor); 
+}
+template<typename T, typename U>
+Tensor<T> operator*(U scalar, const Tensor<T>& tensor) {
+    return tensor_scalar_mul(tensor, scalar);
+}
+
+template<typename T, typename U>
+Tensor<T> operator/(U scalar, const Tensor<T>& tensor) {
+    return scalar_tensor_div(scalar, tensor);
+}
 
 #endif
