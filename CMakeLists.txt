@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(minitensor)
+project(minitensor_cpp)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -11,6 +11,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-pybind11_add_module(minitensor python_binding/bindings.cpp)
+pybind11_add_module(minitensor_cpp python_binding/bindings.cpp)
 
-target_include_directories(minitensor PRIVATE ${PROJECT_SOURCE_DIR}/minitensor)
+set_target_properties(minitensor_cpp PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/minitensor
+)
+
+target_include_directories(minitensor_cpp PRIVATE ${PROJECT_SOURCE_DIR}/core)

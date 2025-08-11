@@ -32,7 +32,7 @@ std::string tensor_repr(const Tensor<T>& t) {
     return "<Tensor dtype=" + dtype_name + " shape=" + shape_str + ">";
 }
 
-PYBIND11_MODULE(minitensor, m) {
+PYBIND11_MODULE(minitensor_cpp, m) {
     m.doc() = "MiniTensor! WwWwWoWwWwW";
 
     auto m_float = m.def_submodule("float32");
