@@ -2,9 +2,9 @@ import os
 import sys
 from typing import List
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "build"))
+sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-from . import minitensor as mt
+from . import minitensor_cpp as mtc
 
 class Tensor:
     def __init__(self, data: List, shape: List[int], dtype: str):
@@ -19,13 +19,13 @@ class Tensor:
 
         self.dtype = dtype
         if (dtype == "int32") or (dtype == "int"):
-            self._tensor = mt.int32.Tensor(data, shape)
+            self._tensor = mtc.int32.Tensor(data, shape)
 
         elif (dtype == "float32") or (dtype == "float"):
-            self._tensor = mt.float32.Tensor(data, shape)
+            self._tensor = mtc.float32.Tensor(data, shape)
 
         elif (dtype == "float64") or (dtype == "double"):
-            self._tensor = mt.float64.Tensor(data, shape)
+            self._tensor = mtc.float64.Tensor(data, shape)
 
         else:
             raise TypeError("ERROR: Unsupported data type. Only int, float and double are supported.")
@@ -51,50 +51,62 @@ class Tensor:
     def __add__(self, other):
         if isinstance(other, Tensor):
             result = self._tensor + other._tensor
-            return Tensor(result.to_list(), result.shape, self.dtype)
 
         elif (isinstance(other, int)) or (isinstance(other, float)):
             result = self._tensor + other
-            return Tensor(result.to_list(), result.shape, self.dtype)
 
         else:
             raise TypeError(f"Unsupported operand type for +: 'Tensor' and '{type(other).__name__}'")
 
+        new_python_tensor = Tensor.__new__(Tensor)
+        new_python_tensor._tensor = result
+        new_python_tensor.dtype = self.dtype
+        return new_python_tensor
+
     def __sub__(self, other):
         if isinstance(other, Tensor):
             result = self._tensor - other._tensor
-            return Tensor(result.to_list(), result.shape, self.dtype)
 
         elif (isinstance(other, int)) or (isinstance(other, float)):
             result = self._tensor - other
-            return Tensor(result.to_list(), result.shape, self.dtype)
 
         else:
             raise TypeError(f"Unsupported operand type for -: 'Tensor' and '{type(other).__name__}'")
+        
+        new_python_tensor = Tensor.__new__(Tensor)
+        new_python_tensor._tensor = result
+        new_python_tensor.dtype = self.dtype
+        return new_python_tensor
 
     def __mul__(self, other):
         if isinstance(other, Tensor):
             result = self._tensor * other._tensor
-            return Tensor(result.to_list(), result.shape, self.dtype)
 
         elif (isinstance(other, int)) or (isinstance(other, float)):
             result = self._tensor * other
-            return Tensor(result.to_list(), result.shape, self.dtype)
 
         else:
             raise TypeError(f"Unsupported operand type for *: 'Tensor' and '{type(other).__name__}'")
 
+        new_python_tensor = Tensor.__new__(Tensor)
+        new_python_tensor._tensor = result
+        new_python_tensor.dtype = self.dtype
+        return new_python_tensor
+
     def __truediv__(self, other):
         if isinstance(other, Tensor):
             result = self._tensor / other._tensor
-            return Tensor(result.to_list(), result.shape, self.dtype)
 
         elif (isinstance(other, int)) or (isinstance(other, float)):
             result = self._tensor / other
-            return Tensor(result.to_list(), result.shape, self.dtype)
 
         else:
             raise TypeError(f"Unsupported operand type for /: 'Tensor' and '{type(other).__name__}'")
+        
+        new_python_tensor = Tensor.__new__(Tensor)
+        new_python_tensor._tensor = result
+        new_python_tensor.dtype = self.dtype
+        return new_python_tensor
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -106,7 +118,7 @@ class Tensor:
         return self.__mul__(other)
 
     def __rtruediv__(self, other):
-        return self.__div__(other)
+        return self.__truediv__(other)
 
 def tensor(data: list, shape: list = None, dtype: str = None) -> Tensor:
     if not data:
