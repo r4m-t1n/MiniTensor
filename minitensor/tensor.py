@@ -42,12 +42,27 @@ class Tensor:
     def ndim(self) -> int:
         return self._tensor.ndim
 
+    @property
+    def stride(self) -> tuple:
+        return self._tensor.stride
+
     def to_list(self) -> list:
         return self._tensor.to_list()
 
     def __repr__(self):
         return repr(self._tensor)
     
+    def __matmul__(self, other):
+        if isinstance(other, Tensor):
+            result = self._tensor @ other._tensor
+        else:
+            raise TypeError(f"ERROR: Unsupported operand type for @: 'Tensor' and '{type(other).__name__}'")
+
+        new_python_tensor = Tensor.__new__(Tensor)
+        new_python_tensor._tensor = result
+        new_python_tensor.dtype = self.dtype
+        return new_python_tensor
+
     def __add__(self, other):
         if isinstance(other, Tensor):
             result = self._tensor + other._tensor
@@ -56,7 +71,7 @@ class Tensor:
             result = self._tensor + other
 
         else:
-            raise TypeError(f"Unsupported operand type for +: 'Tensor' and '{type(other).__name__}'")
+            raise TypeError(f"ERROR: Unsupported operand type for +: 'Tensor' and '{type(other).__name__}'")
 
         new_python_tensor = Tensor.__new__(Tensor)
         new_python_tensor._tensor = result
@@ -71,7 +86,7 @@ class Tensor:
             result = self._tensor - other
 
         else:
-            raise TypeError(f"Unsupported operand type for -: 'Tensor' and '{type(other).__name__}'")
+            raise TypeError(f"ERROR: Unsupported operand type for -: 'Tensor' and '{type(other).__name__}'")
         
         new_python_tensor = Tensor.__new__(Tensor)
         new_python_tensor._tensor = result
@@ -86,7 +101,7 @@ class Tensor:
             result = self._tensor * other
 
         else:
-            raise TypeError(f"Unsupported operand type for *: 'Tensor' and '{type(other).__name__}'")
+            raise TypeError(f"ERROR: Unsupported operand type for *: 'Tensor' and '{type(other).__name__}'")
 
         new_python_tensor = Tensor.__new__(Tensor)
         new_python_tensor._tensor = result
@@ -101,7 +116,7 @@ class Tensor:
             result = self._tensor / other
 
         else:
-            raise TypeError(f"Unsupported operand type for /: 'Tensor' and '{type(other).__name__}'")
+            raise TypeError(f"ERROR: Unsupported operand type for /: 'Tensor' and '{type(other).__name__}'")
         
         new_python_tensor = Tensor.__new__(Tensor)
         new_python_tensor._tensor = result

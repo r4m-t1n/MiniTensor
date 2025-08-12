@@ -14,6 +14,17 @@ public:
     std::vector<int> shape;
     int ndim;
     int size;
+    std::vector<int> stride;
+
+    static std::vector<int> compute_stride(const std::vector<int>& shape, const int ndim) {
+        std::vector<int> stride(ndim);
+        int acc = 1;
+        for (int i = ndim - 1; i >= 0; --i) {
+            stride[i] = acc;
+            acc *= shape[i];
+        }
+        return stride;
+    }
 
     Tensor(const std::vector<int>& shape)
         : shape(shape), ndim(shape.size()), data(nullptr) {
@@ -24,11 +35,10 @@ public:
         if (size <= 0) {
             throw std::invalid_argument("ERROR: Dimension must be positive.");
         }
-        
+
+        stride = compute_stride(shape, ndim);
+
         data = new T[size];
-        if (!data) {
-            throw std::bad_alloc();
-        }
     }
 
     Tensor(const std::vector<T>& data_vec, const std::vector<int>& shape)
@@ -46,6 +56,8 @@ public:
             throw std::invalid_argument("ERROR: Data size does not match shape size.");
         }
 
+        stride = compute_stride(shape, ndim);
+
         data = new T[size];
         if (!data) {
             throw std::bad_alloc();
@@ -57,12 +69,16 @@ public:
     }
     
     Tensor() = delete;
-    
+
     Tensor(Tensor&& other) noexcept
-        : data(other.data), shape(std::move(other.shape)), ndim(other.ndim), size(other.size) {
+        : data(other.data),
+        shape(std::move(other.shape)),
+        ndim(other.ndim),
+        size(other.size),
+        stride(std::move(other.stride)){
         other.data = nullptr;
     }
-    
+
     Tensor& operator=(Tensor&& other) noexcept {
         if (this != &other) {
             delete[] data;
@@ -70,6 +86,7 @@ public:
             shape = std::move(other.shape);
             ndim = other.ndim;
             size = other.size;
+            stride = std::move(other.stride);
             other.data = nullptr;
         }
         return *this;
