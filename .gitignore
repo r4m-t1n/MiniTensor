@@ -1,2 +1,10 @@
 build/
 CMakeFiles/
+__pycache__/
+minitensor.egg-info/
+dist/
+*.so
+*.o
+*.pyd
+*.pyc
+test.py
