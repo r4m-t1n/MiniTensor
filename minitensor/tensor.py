@@ -37,7 +37,7 @@ class Tensor:
     @property
     def size(self) -> int:
         return self._tensor.size
-    
+
     @property
     def ndim(self) -> int:
         return self._tensor.ndim
@@ -49,6 +49,12 @@ class Tensor:
     def to_list(self) -> list:
         return self._tensor.to_list()
 
+    def _new_tensor(self, result):
+        new_python_tensor = Tensor.__new__(Tensor)
+        new_python_tensor._tensor = result
+        new_python_tensor.dtype = self.dtype
+        return new_python_tensor
+
     def __repr__(self):
         return repr(self._tensor)
     
@@ -57,11 +63,7 @@ class Tensor:
             result = self._tensor @ other._tensor
         else:
             raise TypeError(f"ERROR: Unsupported operand type for @: 'Tensor' and '{type(other).__name__}'")
-
-        new_python_tensor = Tensor.__new__(Tensor)
-        new_python_tensor._tensor = result
-        new_python_tensor.dtype = self.dtype
-        return new_python_tensor
+        return self._new_tensor(result)
 
     def __add__(self, other):
         if isinstance(other, Tensor):
@@ -72,11 +74,7 @@ class Tensor:
 
         else:
             raise TypeError(f"ERROR: Unsupported operand type for +: 'Tensor' and '{type(other).__name__}'")
-
-        new_python_tensor = Tensor.__new__(Tensor)
-        new_python_tensor._tensor = result
-        new_python_tensor.dtype = self.dtype
-        return new_python_tensor
+        return self._new_tensor(result)
 
     def __sub__(self, other):
         if isinstance(other, Tensor):
@@ -87,11 +85,7 @@ class Tensor:
 
         else:
             raise TypeError(f"ERROR: Unsupported operand type for -: 'Tensor' and '{type(other).__name__}'")
-        
-        new_python_tensor = Tensor.__new__(Tensor)
-        new_python_tensor._tensor = result
-        new_python_tensor.dtype = self.dtype
-        return new_python_tensor
+        return self._new_tensor(result)
 
     def __mul__(self, other):
         if isinstance(other, Tensor):
@@ -102,11 +96,7 @@ class Tensor:
 
         else:
             raise TypeError(f"ERROR: Unsupported operand type for *: 'Tensor' and '{type(other).__name__}'")
-
-        new_python_tensor = Tensor.__new__(Tensor)
-        new_python_tensor._tensor = result
-        new_python_tensor.dtype = self.dtype
-        return new_python_tensor
+        return self._new_tensor(result)
 
     def __truediv__(self, other):
         if isinstance(other, Tensor):
@@ -117,11 +107,7 @@ class Tensor:
 
         else:
             raise TypeError(f"ERROR: Unsupported operand type for /: 'Tensor' and '{type(other).__name__}'")
-        
-        new_python_tensor = Tensor.__new__(Tensor)
-        new_python_tensor._tensor = result
-        new_python_tensor.dtype = self.dtype
-        return new_python_tensor
+        return self._new_tensor(result)
 
     def __radd__(self, other):
         return self.__add__(other)
