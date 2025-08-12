@@ -44,6 +44,7 @@ PYBIND11_MODULE(minitensor_cpp, m) {
         .def_readwrite("size", &Tensor<float>::size)
         .def("to_list", &get_tensor_data<float>)
         .def("__repr__", &tensor_repr<float>)
+        .def("__matmul__", &mat_mul<float>)
         .def(py::self + py::self)
         .def(py::self - py::self)
         .def(py::self * py::self)
@@ -57,6 +58,7 @@ PYBIND11_MODULE(minitensor_cpp, m) {
         .def(float() * py::self)
         .def(float() / py::self);
 
+    m_float.def("mat_mul", &mat_mul<float>);
     m_float.def("add", &tensor_add<float>);
     m_float.def("sub", &tensor_sub<float>);
     m_float.def("mul", &tensor_mul<float>);
@@ -78,6 +80,7 @@ PYBIND11_MODULE(minitensor_cpp, m) {
         .def_readwrite("size", &Tensor<double>::size)
         .def("to_list", &get_tensor_data<double>)
         .def("__repr__", &tensor_repr<double>)
+        .def("__matmul__", &mat_mul<double>)
         .def(py::self + py::self)
         .def(py::self - py::self)
         .def(py::self * py::self)
@@ -91,6 +94,7 @@ PYBIND11_MODULE(minitensor_cpp, m) {
         .def(double() * py::self)
         .def(double() / py::self);
 
+    m_double.def("mat_mul", &mat_mul<double>);
     m_double.def("add", &tensor_add<double>);
     m_double.def("sub", &tensor_sub<double>);
     m_double.def("mul", &tensor_mul<double>);
@@ -112,6 +116,7 @@ PYBIND11_MODULE(minitensor_cpp, m) {
         .def_readwrite("size", &Tensor<int>::size)
         .def("to_list", &get_tensor_data<int>)
         .def("__repr__", &tensor_repr<int>)
+        .def("__matmul__", &mat_mul<int>)
         .def(py::self + py::self)
         .def(py::self - py::self)
         .def(py::self * py::self)
@@ -125,6 +130,7 @@ PYBIND11_MODULE(minitensor_cpp, m) {
         .def(int() * py::self)
         .def(int() / py::self);
 
+    m_int.def("mat_mul", &mat_mul<int>);
     m_int.def("add", &tensor_add<int>);
     m_int.def("sub", &tensor_sub<int>);
     m_int.def("mul", &tensor_mul<int>);

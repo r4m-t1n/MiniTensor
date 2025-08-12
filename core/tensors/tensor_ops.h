@@ -179,6 +179,7 @@ template<typename T, typename U>
 Tensor<T> operator-(U scalar, const Tensor<T>& tensor) {
     return scalar_tensor_sub(scalar, tensor); 
 }
+
 template<typename T, typename U>
 Tensor<T> operator*(U scalar, const Tensor<T>& tensor) {
     return tensor_scalar_mul(tensor, scalar);
@@ -187,6 +188,45 @@ Tensor<T> operator*(U scalar, const Tensor<T>& tensor) {
 template<typename T, typename U>
 Tensor<T> operator/(U scalar, const Tensor<T>& tensor) {
     return scalar_tensor_div(scalar, tensor);
+}
+
+template<typename T>
+Tensor<T> mat_mul(Tensor<T> &a, Tensor<T> &b){
+    if (a.ndim != 2 || b.ndim != 2){
+        throw std::invalid_argument("ERROR: Both tensors must be 2D matrices");
+    }
+
+    int m = a.shape[0];
+    int k1 = a.shape[1];
+    int k2 = b.shape[0];
+    int n = b.shape[1];
+
+    if (k1 != k2){
+        throw std::invalid_argument(
+            "ERROR: Shapes are not valid to multiply: " +
+            std::to_string(m) + "x" + std::to_string(k1) +
+            " and " +
+            std::to_string(k2) + "x" + std::to_string(n)
+        );
+    }
+
+    Tensor<T> result({m, n});
+
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            T sum = 0;
+            for (int r = 0; r < k1; r++) {
+                int idx_a = i * a.stride[0] + r * a.stride[1];
+                int idx_b = r * b.stride[0] + j * b.stride[1];
+                sum += a.data[idx_a] * b.data[idx_b];
+            }
+            int idx_res = i * result.stride[0] + j * result.stride[1];
+            result.data[idx_res] = sum;
+        }
+    }
+
+    return result;
+
 }
 
 #endif
