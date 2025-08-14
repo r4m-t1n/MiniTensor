@@ -7,31 +7,6 @@
 
 namespace py = pybind11;
 
-template<typename T>
-std::string tensor_repr(const Tensor<T>& t) {
-    std::string shape_str = "(";
-    for (size_t i = 0; i < t.shape.size(); ++i) {
-        shape_str += std::to_string(t.shape[i]);
-        if (i < t.shape.size() - 1) {
-            shape_str += ", ";
-        }
-    }
-    shape_str += ")";
-    
-    std::string dtype_name;
-    if (std::is_same<T, int>::value) {
-        dtype_name = "int32";
-    } else if (std::is_same<T, float>::value) {
-        dtype_name = "float32";
-    } else if (std::is_same<T, double>::value) {
-        dtype_name = "float64";
-    } else {
-        dtype_name = "unknown";
-    }
-
-    return "<Tensor dtype=" + dtype_name + " shape=" + shape_str + ">";
-}
-
 PYBIND11_MODULE(minitensor_cpp, m) {
     m.doc() = "MiniTensor! WwWwWoWwWwW";
 
@@ -42,6 +17,7 @@ PYBIND11_MODULE(minitensor_cpp, m) {
         .def_readwrite("shape", &Tensor<float>::shape)
         .def_readwrite("ndim", &Tensor<float>::ndim)
         .def_readwrite("size", &Tensor<float>::size)
+        .def_readwrite("stride", &Tensor<float>::stride)
         .def("to_list", &get_tensor_data<float>)
         .def("__repr__", &tensor_repr<float>)
         .def("__matmul__", &mat_mul<float>)
@@ -78,6 +54,7 @@ PYBIND11_MODULE(minitensor_cpp, m) {
         .def_readwrite("shape", &Tensor<double>::shape)
         .def_readwrite("ndim", &Tensor<double>::ndim)
         .def_readwrite("size", &Tensor<double>::size)
+        .def_readwrite("stride", &Tensor<double>::stride)
         .def("to_list", &get_tensor_data<double>)
         .def("__repr__", &tensor_repr<double>)
         .def("__matmul__", &mat_mul<double>)
@@ -114,6 +91,7 @@ PYBIND11_MODULE(minitensor_cpp, m) {
         .def_readwrite("shape", &Tensor<int>::shape)
         .def_readwrite("ndim", &Tensor<int>::ndim)
         .def_readwrite("size", &Tensor<int>::size)
+        .def_readwrite("stride", &Tensor<int>::stride)
         .def("to_list", &get_tensor_data<int>)
         .def("__repr__", &tensor_repr<int>)
         .def("__matmul__", &mat_mul<int>)
