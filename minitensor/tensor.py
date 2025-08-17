@@ -69,7 +69,7 @@ class Tensor:
         if isinstance(other, Tensor):
             result = self._tensor + other._tensor
 
-        elif (isinstance(other, int)) or (isinstance(other, float)):
+        elif isinstance(other, (int, float)):
             result = self._tensor + other
 
         else:
@@ -80,7 +80,7 @@ class Tensor:
         if isinstance(other, Tensor):
             result = self._tensor - other._tensor
 
-        elif (isinstance(other, int)) or (isinstance(other, float)):
+        elif isinstance(other, (int, float)):
             result = self._tensor - other
 
         else:
@@ -91,7 +91,7 @@ class Tensor:
         if isinstance(other, Tensor):
             result = self._tensor * other._tensor
 
-        elif (isinstance(other, int)) or (isinstance(other, float)):
+        elif isinstance(other, (int, float)):
             result = self._tensor * other
 
         else:
@@ -102,7 +102,7 @@ class Tensor:
         if isinstance(other, Tensor):
             result = self._tensor / other._tensor
 
-        elif (isinstance(other, int)) or (isinstance(other, float)):
+        elif isinstance(other, (int, float)):
             result = self._tensor / other
 
         else:
@@ -113,13 +113,29 @@ class Tensor:
         return self.__add__(other)
 
     def __rsub__(self, other):
-        return self.__sub__(other)
+        if isinstance(other, Tensor):
+            result = other._tensor - self._tensor
+
+        elif isinstance(other, (int, float)):
+            result = other - self._tensor
+
+        else:
+            raise TypeError(f"ERROR: Unsupported operand type for -: 'Tensor' and '{type(other).__name__}'")
+        return self._new_tensor(result)
 
     def __rmul__(self, other):
         return self.__mul__(other)
 
     def __rtruediv__(self, other):
-        return self.__truediv__(other)
+        if isinstance(other, Tensor):
+            result = other._tensor / self._tensor
+
+        elif isinstance(other, (int, float)):
+            result = other / self._tensor
+
+        else:
+            raise TypeError(f"ERROR: Unsupported operand type for /: 'Tensor' and '{type(other).__name__}'")
+        return self._new_tensor(result)
 
 def tensor(data: list, shape: list = None, dtype: str = None) -> Tensor:
     if not data:
