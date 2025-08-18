@@ -12,12 +12,20 @@ PYBIND11_MODULE(minitensor_cpp, m) {
 
     auto m_float = m.def_submodule("float32");
     py::class_<Tensor<float>>(m_float, "Tensor")
-        .def(py::init<const std::vector<float>&, const std::vector<int>&>())
+        .def(py::init<const std::vector<float>&, const std::vector<int>&, bool>(),
+             py::arg("data_vec"), py::arg("shape"), py::arg("requires_grad") = false)
+        .def(py::init<const std::vector<int>&, bool>(),
+             py::arg("shape"), py::arg("requires_grad") = false)
+        .def(py::init<float*, const std::vector<int>&, bool>(),
+             py::arg("data_ptr"), py::arg("shape"), py::arg("requires_grad") = false)
         .def_readwrite("data", &Tensor<float>::data)
         .def_readwrite("shape", &Tensor<float>::shape)
         .def_readwrite("ndim", &Tensor<float>::ndim)
         .def_readwrite("size", &Tensor<float>::size)
         .def_readwrite("stride", &Tensor<float>::stride)
+        .def_readwrite("requires_grad", &Tensor<float>::requires_grad)
+        .def_readwrite("grad", &Tensor<float>::grad)
+        .def("backward", &Tensor<float>::backward)
         .def("to_list", &get_tensor_data<float>)
         .def("__repr__", &tensor_repr<float>)
         .def("__matmul__", &mat_mul<float>)
@@ -49,12 +57,20 @@ PYBIND11_MODULE(minitensor_cpp, m) {
 
     auto m_double = m.def_submodule("float64");
     py::class_<Tensor<double>>(m_double, "Tensor")
-        .def(py::init<const std::vector<double>&, const std::vector<int>&>())
+        .def(py::init<const std::vector<double>&, const std::vector<int>&, bool>(),
+             py::arg("data_vec"), py::arg("shape"), py::arg("requires_grad") = false)
+        .def(py::init<const std::vector<int>&, bool>(),
+             py::arg("shape"), py::arg("requires_grad") = false)
+        .def(py::init<double*, const std::vector<int>&, bool>(),
+             py::arg("data_ptr"), py::arg("shape"), py::arg("requires_grad") = false)
         .def_readwrite("data", &Tensor<double>::data)
         .def_readwrite("shape", &Tensor<double>::shape)
         .def_readwrite("ndim", &Tensor<double>::ndim)
         .def_readwrite("size", &Tensor<double>::size)
         .def_readwrite("stride", &Tensor<double>::stride)
+        .def_readwrite("requires_grad", &Tensor<double>::requires_grad)
+        .def_readwrite("grad", &Tensor<double>::grad)
+        .def("backward", &Tensor<double>::backward)
         .def("to_list", &get_tensor_data<double>)
         .def("__repr__", &tensor_repr<double>)
         .def("__matmul__", &mat_mul<double>)
@@ -86,12 +102,20 @@ PYBIND11_MODULE(minitensor_cpp, m) {
 
     auto m_int = m.def_submodule("int32");
     py::class_<Tensor<int>>(m_int, "Tensor")
-        .def(py::init<const std::vector<int>&, const std::vector<int>&>())
+        .def(py::init<const std::vector<int>&, const std::vector<int>&, bool>(),
+             py::arg("data_vec"), py::arg("shape"), py::arg("requires_grad") = false)
+        .def(py::init<const std::vector<int>&, bool>(),
+             py::arg("shape"), py::arg("requires_grad") = false)
+        .def(py::init<int*, const std::vector<int>&, bool>(),
+             py::arg("data_ptr"), py::arg("shape"), py::arg("requires_grad") = false)
         .def_readwrite("data", &Tensor<int>::data)
         .def_readwrite("shape", &Tensor<int>::shape)
         .def_readwrite("ndim", &Tensor<int>::ndim)
         .def_readwrite("size", &Tensor<int>::size)
         .def_readwrite("stride", &Tensor<int>::stride)
+        .def_readwrite("requires_grad", &Tensor<int>::requires_grad)
+        .def_readwrite("grad", &Tensor<int>::grad)
+        .def("backward", &Tensor<int>::backward)
         .def("to_list", &get_tensor_data<int>)
         .def("__repr__", &tensor_repr<int>)
         .def("__matmul__", &mat_mul<int>)
