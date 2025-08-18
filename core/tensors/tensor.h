@@ -4,8 +4,18 @@
 #include <vector>
 #include <stdexcept>
 #include <numeric>
-#include <functional> 
+#include <functional>
 #include <type_traits>
+#include <memory>
+
+template<typename T>
+class Tensor;
+
+template<typename T>
+struct Function {
+    virtual void backward(const Tensor<T>& grad) = 0;
+    virtual ~Function() = default;
+};
 
 template<typename T>
 class Tensor {
@@ -15,6 +25,10 @@ public:
     int ndim;
     int size;
     std::vector<int> stride;
+    bool requires_grad;
+    Tensor<T>* grad;
+    std::vector<Tensor<T>*> parents;
+    std::unique_ptr<Function<T>> grad_fn;
 
     static std::vector<int> compute_stride(const std::vector<int>& shape, const int ndim) {
         std::vector<int> stride(ndim);
@@ -26,8 +40,8 @@ public:
         return stride;
     }
 
-    Tensor(const std::vector<int>& shape)
-        : shape(shape), ndim(shape.size()), data(nullptr) {
+    Tensor(const std::vector<int>& shape, bool requires_grad = false)
+        : shape(shape), ndim(shape.size()), data(nullptr), requires_grad(requires_grad), grad(nullptr) {
         if (ndim < 1) {
             throw std::invalid_argument("ERROR: Invalid shape.");
         }
@@ -41,8 +55,8 @@ public:
         data = new T[size];
     }
 
-    Tensor(const std::vector<T>& data_vec, const std::vector<int>& shape)
-        : shape(shape), ndim(shape.size()), data(nullptr) {
+    Tensor(const std::vector<T>& data_vec, const std::vector<int>& shape, bool requires_grad = false)
+        : shape(shape), ndim(shape.size()), data(nullptr), requires_grad(requires_grad), grad(nullptr) {
         if (ndim < 1) {
             throw std::invalid_argument("ERROR: Invalid shape.");
         }
@@ -70,32 +84,75 @@ public:
     
     Tensor() = delete;
 
+    Tensor(const Tensor&) = delete;
+    Tensor& operator=(const Tensor&) = delete;
+    
     Tensor(Tensor&& other) noexcept
         : data(other.data),
         shape(std::move(other.shape)),
         ndim(other.ndim),
         size(other.size),
-        stride(std::move(other.stride)){
+        stride(std::move(other.stride)),
+        requires_grad(other.requires_grad),
+        grad(other.grad),
+        parents(std::move(other.parents)),
+        grad_fn(std::move(other.grad_fn)) {
         other.data = nullptr;
+        other.grad = nullptr;
     }
 
     Tensor& operator=(Tensor&& other) noexcept {
         if (this != &other) {
             delete[] data;
+            delete grad;
             data = other.data;
             shape = std::move(other.shape);
             ndim = other.ndim;
             size = other.size;
             stride = std::move(other.stride);
+            requires_grad = other.requires_grad;
+            grad = other.grad;
+            parents = std::move(other.parents);
+            grad_fn = std::move(other.grad_fn);
             other.data = nullptr;
+            other.grad = nullptr;
         }
         return *this;
     }
 
-    Tensor(const Tensor&) = delete;
-    Tensor& operator=(const Tensor&) = delete;
+    Tensor(T* data_ptr, const std::vector<int>& shape, bool requires_grad = false)
+        : shape(shape), ndim(shape.size()), requires_grad(requires_grad), grad(nullptr) {
+        if (ndim < 1) {
+            throw std::invalid_argument("ERROR: Invalid shape.");
+        }
+        size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>());
+        if (size <= 0) {
+            throw std::invalid_argument("ERROR: Dimension must be positive.");
+        }
+        stride = compute_stride(shape, ndim);
+
+        this->data = new T[size];
+        for(int i = 0; i < size; ++i) {
+            this->data[i] = data_ptr[i];
+        }
+    }
+    
     ~Tensor() {
         delete[] data;
+        delete grad;
+    }
+
+    void backward() {
+        if (!requires_grad) {
+            return;
+        }
+        if (grad == nullptr) {
+            std::vector<T> ones_data(size, static_cast<T>(1));
+            grad = new Tensor<T>(ones_data, shape, false);
+        }
+        if (grad_fn) {
+            grad_fn->backward(*grad);
+        }
     }
 };
 
@@ -106,6 +163,31 @@ std::vector<T> get_tensor_data(const Tensor<T>& tensor) {
         data_vec[i] = tensor.data[i];
     }
     return data_vec;
+}
+
+template<typename T>
+std::string tensor_repr(const Tensor<T>& t) {
+    std::string shape_str = "(";
+    for (size_t i = 0; i < t.shape.size(); ++i) {
+        shape_str += std::to_string(t.shape[i]);
+        if (i < t.shape.size() - 1) {
+            shape_str += ", ";
+        }
+    }
+    shape_str += ")";
+    
+    std::string dtype_name;
+    if (std::is_same<T, int>::value) {
+        dtype_name = "int32";
+    } else if (std::is_same<T, float>::value) {
+        dtype_name = "float32";
+    } else if (std::is_same<T, double>::value) {
+        dtype_name = "float64";
+    } else {
+        dtype_name = "unknown";
+    }
+
+    return "<Tensor dtype=" + dtype_name + " shape=" + shape_str + ">";
 }
 
 #endif
