@@ -4,6 +4,9 @@
 #include <iostream>
 #include <stdexcept>
 #include "tensor.h"
+#include <vector>
+#include <memory>
+#include <cmath>
 
 template<typename T>
 void check_tensor_validity(const Tensor<T>& a, const Tensor<T>& b) {
@@ -29,8 +32,31 @@ struct AddBackward : public Function<T> {
         parents.push_back(a);
         parents.push_back(b);
     }
-
     void backward(const Tensor<T>& grad_out) override {
+        if (parents[0]->requires_grad) {
+            if (parents[0]->grad == nullptr) {
+                parents[0]->grad = new Tensor<T>(grad_out.data, grad_out.shape);
+            } else {
+                for (int i = 0; i < parents[0]->size; ++i) {
+                    parents[0]->grad->data[i] += grad_out.data[i];
+                }
+            }
+            if (parents[0]->grad_fn) {
+                parents[0]->grad_fn->backward(grad_out);
+            }
+        }
+        if (parents[1]->requires_grad) {
+            if (parents[1]->grad == nullptr) {
+                parents[1]->grad = new Tensor<T>(grad_out.data, grad_out.shape);
+            } else {
+                for (int i = 0; i < parents[1]->size; ++i) {
+                    parents[1]->grad->data[i] += grad_out.data[i];
+                }
+            }
+            if (parents[1]->grad_fn) {
+                parents[1]->grad_fn->backward(grad_out);
+            }
+        }
     }
     std::vector<Tensor<T>*> parents;
 };
@@ -41,8 +67,36 @@ struct SubBackward : public Function<T> {
         parents.push_back(a);
         parents.push_back(b);
     }
-
     void backward(const Tensor<T>& grad_out) override {
+        if (parents[0]->requires_grad) {
+            if (parents[0]->grad == nullptr) {
+                parents[0]->grad = new Tensor<T>(grad_out.data, grad_out.shape);
+            } else {
+                for (int i = 0; i < parents[0]->size; ++i) {
+                    parents[0]->grad->data[i] += grad_out.data[i];
+                }
+            }
+            if (parents[0]->grad_fn) {
+                parents[0]->grad_fn->backward(grad_out);
+            }
+        }
+        if (parents[1]->requires_grad) {
+            std::vector<T> neg_grad_data(grad_out.size);
+            for (int i = 0; i < grad_out.size; ++i) {
+                neg_grad_data[i] = -grad_out.data[i];
+            }
+            Tensor<T> neg_grad(neg_grad_data, grad_out.shape);
+            if (parents[1]->grad == nullptr) {
+                parents[1]->grad = new Tensor<T>(neg_grad.data, neg_grad.shape);
+            } else {
+                for (int i = 0; i < parents[1]->size; ++i) {
+                    parents[1]->grad->data[i] += neg_grad.data[i];
+                }
+            }
+            if (parents[1]->grad_fn) {
+                parents[1]->grad_fn->backward(neg_grad);
+            }
+        }
     }
     std::vector<Tensor<T>*> parents;
 };
@@ -53,8 +107,41 @@ struct MulBackward : public Function<T> {
         parents.push_back(a);
         parents.push_back(b);
     }
-
     void backward(const Tensor<T>& grad_out) override {
+        if (parents[0]->requires_grad) {
+            std::vector<T> grad_a_data(grad_out.size);
+            for (int i = 0; i < grad_out.size; ++i) {
+                grad_a_data[i] = grad_out.data[i] * parents[1]->data[i];
+            }
+            Tensor<T> grad_a(grad_a_data, grad_out.shape);
+            if (parents[0]->grad == nullptr) {
+                parents[0]->grad = new Tensor<T>(grad_a.data, grad_a.shape);
+            } else {
+                for (int i = 0; i < parents[0]->size; ++i) {
+                    parents[0]->grad->data[i] += grad_a.data[i];
+                }
+            }
+            if (parents[0]->grad_fn) {
+                parents[0]->grad_fn->backward(grad_a);
+            }
+        }
+        if (parents[1]->requires_grad) {
+            std::vector<T> grad_b_data(grad_out.size);
+            for (int i = 0; i < grad_out.size; ++i) {
+                grad_b_data[i] = grad_out.data[i] * parents[0]->data[i];
+            }
+            Tensor<T> grad_b(grad_b_data, grad_out.shape);
+            if (parents[1]->grad == nullptr) {
+                parents[1]->grad = new Tensor<T>(grad_b.data, grad_b.shape);
+            } else {
+                for (int i = 0; i < parents[1]->size; ++i) {
+                    parents[1]->grad->data[i] += grad_b.data[i];
+                }
+            }
+            if (parents[1]->grad_fn) {
+                parents[1]->grad_fn->backward(grad_b);
+            }
+        }
     }
     std::vector<Tensor<T>*> parents;
 };
@@ -65,30 +152,89 @@ struct DivBackward : public Function<T> {
         parents.push_back(a);
         parents.push_back(b);
     }
-
     void backward(const Tensor<T>& grad_out) override {
+        if (parents[0]->requires_grad) {
+            std::vector<T> grad_a_data(grad_out.size);
+            for (int i = 0; i < grad_out.size; ++i) {
+                if (parents[1]->data[i] == static_cast<T>(0)) {
+                    throw std::runtime_error("ERROR: Division by zero is not allowed");
+                }
+                grad_a_data[i] = grad_out.data[i] / parents[1]->data[i];
+            }
+            Tensor<T> grad_a(grad_a_data, grad_out.shape);
+            if (parents[0]->grad == nullptr) {
+                parents[0]->grad = new Tensor<T>(grad_a.data, grad_a.shape);
+            } else {
+                for (int i = 0; i < parents[0]->size; ++i) {
+                    parents[0]->grad->data[i] += grad_a.data[i];
+                }
+            }
+            if (parents[0]->grad_fn) {
+                parents[0]->grad_fn->backward(grad_a);
+            }
+        }
+        if (parents[1]->requires_grad) {
+            std::vector<T> grad_b_data(grad_out.size);
+            for (int i = 0; i < grad_out.size; ++i) {
+                if (parents[1]->data[i] == static_cast<T>(0)) {
+                    throw std::runtime_error("ERROR: Division by zero is not allowed");
+                }
+                grad_b_data[i] = grad_out.data[i] * (-parents[0]->data[i] / (parents[1]->data[i] * parents[1]->data[i]));
+            }
+            Tensor<T> grad_b(grad_b_data, grad_out.shape);
+            if (parents[1]->grad == nullptr) {
+                parents[1]->grad = new Tensor<T>(grad_b.data, grad_b.shape);
+            } else {
+                for (int i = 0; i < parents[1]->size; ++i) {
+                    parents[1]->grad->data[i] += grad_b.data[i];
+                }
+            }
+            if (parents[1]->grad_fn) {
+                parents[1]->grad_fn->backward(grad_b);
+            }
+        }
     }
     std::vector<Tensor<T>*> parents;
 };
 
 template<typename T>
 struct AddScalarBackward : public Function<T> {
-    AddScalarBackward(Tensor<T>* a) {
-        parents.push_back(a);
-    }
+    Tensor<T>* parent;
+    AddScalarBackward(Tensor<T>* a) : parent(a) {}
     void backward(const Tensor<T>& grad_out) override {
+        if (parent->requires_grad) {
+            if (parent->grad == nullptr) {
+                parent->grad = new Tensor<T>(grad_out.data, grad_out.shape);
+            } else {
+                for (int i = 0; i < parent->size; ++i) {
+                    parent->grad->data[i] += grad_out.data[i];
+                }
+            }
+            if (parent->grad_fn) {
+                parent->grad_fn->backward(grad_out);
+            }
+        }
     }
-    std::vector<Tensor<T>*> parents;
 };
 
 template<typename T>
 struct SubScalarBackward : public Function<T> {
-    SubScalarBackward(Tensor<T>* a) {
-        parents.push_back(a);
-    }
+    Tensor<T>* parent;
+    SubScalarBackward(Tensor<T>* a) : parent(a) {}
     void backward(const Tensor<T>& grad_out) override {
+        if (parent->requires_grad) {
+            if (parent->grad == nullptr) {
+                parent->grad = new Tensor<T>(grad_out.data, grad_out.shape);
+            } else {
+                for (int i = 0; i < parent->size; ++i) {
+                    parent->grad->data[i] += grad_out.data[i];
+                }
+            }
+            if (parent->grad_fn) {
+                parent->grad_fn->backward(grad_out);
+            }
+        }
     }
-    std::vector<Tensor<T>*> parents;
 };
 
 template<typename T, typename ScalarType>
@@ -97,6 +243,23 @@ struct MulScalarBackward : public Function<T> {
     ScalarType scalar_val;
     MulScalarBackward(Tensor<T>* a, ScalarType scalar) : parent(a), scalar_val(scalar) {}
     void backward(const Tensor<T>& grad_out) override {
+        if (parent->requires_grad) {
+            std::vector<T> grad_a_data(grad_out.size);
+            for (int i = 0; i < grad_out.size; ++i) {
+                grad_a_data[i] = grad_out.data[i] * static_cast<T>(scalar_val);
+            }
+            Tensor<T> grad_a(grad_a_data, grad_out.shape);
+            if (parent->grad == nullptr) {
+                parent->grad = new Tensor<T>(grad_a.data, grad_a.shape);
+            } else {
+                for (int i = 0; i < parent->size; ++i) {
+                    parent->grad->data[i] += grad_a.data[i];
+                }
+            }
+            if (parent->grad_fn) {
+                parent->grad_fn->backward(grad_a);
+            }
+        }
     }
 };
 
@@ -106,6 +269,26 @@ struct DivScalarBackward : public Function<T> {
     ScalarType scalar_val;
     DivScalarBackward(Tensor<T>* a, ScalarType scalar) : parent(a), scalar_val(scalar) {}
     void backward(const Tensor<T>& grad_out) override {
+        if (parent->requires_grad) {
+            std::vector<T> grad_a_data(grad_out.size);
+            for (int i = 0; i < grad_out.size; ++i) {
+                if (scalar_val == static_cast<T>(0)) {
+                    throw std::runtime_error("ERROR: Division by zero is not allowed");
+                }
+                grad_a_data[i] = grad_out.data[i] / static_cast<T>(scalar_val);
+            }
+            Tensor<T> grad_a(grad_a_data, grad_out.shape);
+            if (parent->grad == nullptr) {
+                parent->grad = new Tensor<T>(grad_a.data, grad_a.shape);
+            } else {
+                for (int i = 0; i < parent->size; ++i) {
+                    parent->grad->data[i] += grad_a.data[i];
+                }
+            }
+            if (parent->grad_fn) {
+                parent->grad_fn->backward(grad_a);
+            }
+        }
     }
 };
 
@@ -115,6 +298,23 @@ struct ScalarTensorSubBackward : public Function<T> {
     Tensor<T>* parent;
     ScalarTensorSubBackward(ScalarType scalar, Tensor<T>* a) : scalar_val(scalar), parent(a) {}
     void backward(const Tensor<T>& grad_out) override {
+        if (parent->requires_grad) {
+            std::vector<T> neg_grad_data(grad_out.size);
+            for (int i = 0; i < grad_out.size; ++i) {
+                neg_grad_data[i] = -grad_out.data[i];
+            }
+            Tensor<T> neg_grad(neg_grad_data, grad_out.shape);
+            if (parent->grad == nullptr) {
+                parent->grad = new Tensor<T>(neg_grad.data, neg_grad.shape);
+            } else {
+                for (int i = 0; i < parent->size; ++i) {
+                    parent->grad->data[i] += neg_grad.data[i];
+                }
+            }
+            if (parent->grad_fn) {
+                parent->grad_fn->backward(neg_grad);
+            }
+        }
     }
 };
 
@@ -124,6 +324,26 @@ struct ScalarTensorDivBackward : public Function<T> {
     Tensor<T>* parent;
     ScalarTensorDivBackward(ScalarType scalar, Tensor<T>* a) : scalar_val(scalar), parent(a) {}
     void backward(const Tensor<T>& grad_out) override {
+        if (parent->requires_grad) {
+            std::vector<T> grad_a_data(grad_out.size);
+            for (int i = 0; i < grad_out.size; ++i) {
+                if (parent->data[i] == static_cast<T>(0)) {
+                    throw std::runtime_error("ERROR: Division by zero is not allowed");
+                }
+                grad_a_data[i] = grad_out.data[i] * (-static_cast<T>(scalar_val) / (parent->data[i] * parent->data[i]));
+            }
+            Tensor<T> grad_a(grad_a_data, grad_out.shape);
+            if (parent->grad == nullptr) {
+                parent->grad = new Tensor<T>(grad_a.data, grad_a.shape);
+            } else {
+                for (int i = 0; i < parent->size; ++i) {
+                    parent->grad->data[i] += grad_a.data[i];
+                }
+            }
+            if (parent->grad_fn) {
+                parent->grad_fn->backward(grad_a);
+            }
+        }
     }
 };
 
@@ -131,15 +351,13 @@ template<typename T>
 Tensor<T> tensor_add(const Tensor<T>& a, const Tensor<T>& b) {
     check_tensor_validity(a, b);
     Tensor<T> result(a.shape, a.requires_grad || b.requires_grad);
-
     for (int i = 0; i < a.size; ++i) {
         result.data[i] = a.data[i] + b.data[i];
     }
-
-    if (result.requires_grad){
-        result.parents.push_back(&a);
-        result.parents.push_back(&b);
-        result.grad_fn = std::make_unique<AddBackward<T>>(&a, &b);
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.parents.push_back(const_cast<Tensor<T>*>(&b));
+        result.grad_fn = std::make_unique<AddBackward<T>>(const_cast<Tensor<T>*>(&a), const_cast<Tensor<T>*>(&b));
     }
     return result;
 }
@@ -148,15 +366,13 @@ template<typename T>
 Tensor<T> tensor_sub(const Tensor<T>& a, const Tensor<T>& b) {
     check_tensor_validity(a, b);
     Tensor<T> result(a.shape, a.requires_grad || b.requires_grad);
-
     for (int i = 0; i < a.size; ++i) {
         result.data[i] = a.data[i] - b.data[i];
     }
-    
-    if (result.requires_grad){
-        result.parents.push_back(&a);
-        result.parents.push_back(&b);
-        result.grad_fn = std::make_unique<SubBackward<T>>(&a, &b);
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.parents.push_back(const_cast<Tensor<T>*>(&b));
+        result.grad_fn = std::make_unique<SubBackward<T>>(const_cast<Tensor<T>*>(&a), const_cast<Tensor<T>*>(&b));
     }
     return result;
 }
@@ -165,15 +381,13 @@ template<typename T>
 Tensor<T> tensor_mul(const Tensor<T>& a, const Tensor<T>& b) {
     check_tensor_validity(a, b);
     Tensor<T> result(a.shape, a.requires_grad || b.requires_grad);
-
     for (int i = 0; i < a.size; ++i) {
         result.data[i] = a.data[i] * b.data[i];
     }
-    
-    if (result.requires_grad){
-        result.parents.push_back(&a);
-        result.parents.push_back(&b);
-        result.grad_fn = std::make_unique<MulBackward<T>>(&a, &b);
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.parents.push_back(const_cast<Tensor<T>*>(&b));
+        result.grad_fn = std::make_unique<MulBackward<T>>(const_cast<Tensor<T>*>(&a), const_cast<Tensor<T>*>(&b));
     }
     return result;
 }
@@ -182,18 +396,16 @@ template<typename T>
 Tensor<T> tensor_div(const Tensor<T>& a, const Tensor<T>& b) {
     check_tensor_validity(a, b);
     Tensor<T> result(a.shape, a.requires_grad || b.requires_grad);
-
     for (int i = 0; i < a.size; ++i) {
         if (b.data[i] == static_cast<T>(0)) {
             throw std::runtime_error("ERROR: Division by zero is not allowed");
         }
         result.data[i] = a.data[i] / b.data[i];
     }
-    
-    if (result.requires_grad){
-        result.parents.push_back(&a);
-        result.parents.push_back(&b);
-        result.grad_fn = std::make_unique<DivBackward<T>>(&a, &b);
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.parents.push_back(const_cast<Tensor<T>*>(&b));
+        result.grad_fn = std::make_unique<DivBackward<T>>(const_cast<Tensor<T>*>(&a), const_cast<Tensor<T>*>(&b));
     }
     return result;
 }
@@ -204,10 +416,9 @@ Tensor<T> tensor_scalar_add(const Tensor<T>& a, ScalarType scalar) {
     for (int i = 0; i < a.size; ++i) {
         result.data[i] = a.data[i] + static_cast<T>(scalar);
     }
-    
-    if (result.requires_grad){
-        result.parents.push_back(&a);
-        result.grad_fn = std::make_unique<AddScalarBackward<T>>(&a);
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.grad_fn = std::make_unique<AddScalarBackward<T>>(const_cast<Tensor<T>*>(&a));
     }
     return result;
 }
@@ -218,10 +429,9 @@ Tensor<T> tensor_scalar_sub(const Tensor<T>& a, ScalarType scalar) {
     for (int i = 0; i < a.size; ++i) {
         result.data[i] = a.data[i] - static_cast<T>(scalar);
     }
-    
-    if (result.requires_grad){
-        result.parents.push_back(&a);
-        result.grad_fn = std::make_unique<SubScalarBackward<T>>(&a);
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.grad_fn = std::make_unique<SubScalarBackward<T>>(const_cast<Tensor<T>*>(&a));
     }
     return result;
 }
@@ -232,10 +442,9 @@ Tensor<T> scalar_tensor_sub(ScalarType scalar, const Tensor<T>& a) {
     for (int i = 0; i < a.size; ++i) {
         result.data[i] = static_cast<T>(scalar) - a.data[i];
     }
-    
-    if (result.requires_grad){
-        result.parents.push_back(&a);
-        result.grad_fn = std::make_unique<SubScalarBackward<T>>(&a);
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.grad_fn = std::make_unique<ScalarTensorSubBackward<T, ScalarType>>(scalar, const_cast<Tensor<T>*>(&a));
     }
     return result;
 }
@@ -247,10 +456,9 @@ Tensor<T> tensor_scalar_mul(const Tensor<T>& a, ScalarType scalar) {
     for (int i = 0; i < a.size; ++i) {
         result.data[i] = a.data[i] * static_cast<T>(scalar);
     }
-    
-    if (result.requires_grad){
-        result.parents.push_back(&a);
-        result.grad_fn = std::make_unique<MulScalarBackward<T>>(&a);
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.grad_fn = std::make_unique<MulScalarBackward<T, ScalarType>>(const_cast<Tensor<T>*>(&a), scalar);
     }
     return result;
 }
@@ -264,22 +472,25 @@ Tensor<T> tensor_scalar_div(const Tensor<T>& a, ScalarType scalar) {
     for (int i = 0; i < a.size; ++i) {
         result.data[i] = a.data[i] / static_cast<T>(scalar);
     }
-    
-    if (result.requires_grad){
-        result.parents.push_back(&a);
-        result.grad_fn = std::make_unique<DivScalarBackward<T>>(&a);
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.grad_fn = std::make_unique<DivScalarBackward<T, ScalarType>>(const_cast<Tensor<T>*>(&a), scalar);
     }
     return result;
 }
 
 template<typename T, typename ScalarType>
 Tensor<T> scalar_tensor_div(ScalarType scalar, const Tensor<T>& a) {
-    Tensor<T> result(a.shape);
+    Tensor<T> result(a.shape, a.requires_grad);
     for (int i = 0; i < a.size; ++i) {
         if (a.data[i] == T(0)) {
             throw std::runtime_error("ERROR: Division by zero is not allowed");
         }
         result.data[i] = static_cast<T>(scalar) / a.data[i];
+    }
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.grad_fn = std::make_unique<ScalarTensorDivBackward<T, ScalarType>>(scalar, const_cast<Tensor<T>*>(&a));
     }
     return result;
 }
