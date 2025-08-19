@@ -66,8 +66,13 @@ class Tensor:
     def backward(self):
         self._tensor.backward()
 
-    def to_list(self) -> list:
-        return self._tensor.to_list()
+    @property
+    def listed(self) -> list:
+        return self._tensor.to_vector()
+
+    @property
+    def nested(self) -> list:
+        return self._tensor.to_nested()
 
     def _new_tensor(self, result, requires_grad: bool):
         new_python_tensor = Tensor.__new__(Tensor)

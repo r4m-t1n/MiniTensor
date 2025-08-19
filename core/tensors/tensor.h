@@ -7,6 +7,8 @@
 #include <functional>
 #include <type_traits>
 #include <memory>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 template<typename T>
 class Tensor;
@@ -166,27 +168,23 @@ std::vector<T> to_vector(const Tensor<T>& tensor) {
 }
 
 template<typename T>
-std::vector<T> to_nested_main(const Tensor<T>& tensor, int dim, int offset) {
-    if (dim == tensor.ndim - 1) { 
-        std::vector<T> last_dim(tensor.shape[dim]);
-        for (int i = 0; i < tensor.shape[dim]; i++) {
-            last_dim[i] = tensor.data[offset + i];
-        }
-        return last_dim;
+pybind11::list to_nested(const Tensor<T>& tensor, int dim=0, int offset=0) {
+    pybind11::list nested_list;
+    if (dim == tensor.ndim - 1) {
+        for (int i = 0; i < tensor.shape[dim]; ++i)
+            nested_list.append(tensor.data[offset + i]);
     } else {
-        std::vector<decltype(to_nested_main(tensor, dim+1, 0))> nested_list(tensor.shape[dim]);
         int step = 1;
-        for (int i = dim+1; i < tensor.ndim; i++) step *= tensor.shape[i];
-        for (int i = 0; i < tensor.shape[dim]; i++) {
-            nested_list[i] = to_nested_main(tensor, dim+1, offset + i*step);
-        }
-        return nested_list;
+        for (int i = dim+1; i < tensor.ndim; ++i) step *= tensor.shape[i];
+        for (int i = 0; i < tensor.shape[dim]; ++i)
+            nested_list.append(to_nested(tensor, dim+1, offset + i*step));
     }
+    return nested_list;
 }
 
 template<typename T>
-std::vector<T> to_nested(const Tensor<T>& tensor) {
-    return to_nested_main(tensor, 0, 0);
+pybind11::list to_nested_wrapper(const Tensor<T>& tensor) {
+    return to_nested(tensor, 0, 0);
 }
 
 template<typename T>
@@ -199,7 +197,7 @@ std::string tensor_repr(const Tensor<T>& t) {
         }
     }
     shape_str += ")";
-    
+
     std::string dtype_name;
     if (std::is_same<T, int>::value) {
         dtype_name = "int32";
