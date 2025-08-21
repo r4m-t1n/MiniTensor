@@ -6,7 +6,7 @@
 #include "tensor.h"
 #include <vector>
 #include <cmath>
-#include "autograd/elementwise.h"
+#include "autograd/autograd_elementwise.h"
 
 template<typename T>
 void check_tensor_validity(const Tensor<T>& a, const Tensor<T>& b) {
