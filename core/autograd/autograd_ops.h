@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <stdexcept>
-#include "../tensors/tensor.h"
+#include "tensors/tensor.h"
 #include <vector>
 #include <memory>
 #include <cmath>
@@ -324,6 +324,36 @@ struct ScalarTensorDivBackward : public Function<T> {
             }
             if (parent->grad_fn) {
                 parent->grad_fn->backward(grad_a);
+            }
+        }
+    }
+};
+
+template<typename T>
+struct MatMulBackward : public Function<T> {
+    Tensor<T>* a;
+    Tensor<T>* b;
+
+    MatMulBackward(Tensor<T>* input_a, Tensor<T>* input_b) : a(input_a), b(input_b) {}
+
+    void backward(const Tensor<T>& grad_out) override {
+        if (a->requires_grad) {
+            Tensor<T> b_transposed = transpose(*b);
+            Tensor<T> grad_a = mat_mul(grad_out, b_transposed);
+            if (a->grad == nullptr) {
+                a->grad = new Tensor<T>(grad_a.data, grad_a.shape);
+            } else {
+                *(a->grad) = *(a->grad) + grad_a;
+            }
+        }
+
+        if (b->requires_grad) {
+            Tensor<T> a_transposed = transpose(*a);
+            Tensor<T> grad_b = mat_mul(a_transposed, grad_out);
+            if (b->grad == nullptr) {
+                b->grad = new Tensor<T>(grad_b.data, grad_b.shape);
+            } else {
+                *(b->grad) = *(b->grad) + grad_b;
             }
         }
     }
