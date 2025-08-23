@@ -302,4 +302,45 @@ Tensor<T> transpose(const Tensor<T>& a) {
 
 }
 
+template<typename T>
+Tensor<T> sum(const Tensor<T>& tensor, int axis = -1) {
+    if (axis == -1) {
+        T total_sum = 0;
+        for (int i = 0; i < tensor.size; ++i) {
+            total_sum += tensor.data[i];
+        }
+        return Tensor<T>({total_sum}, {1}, tensor.requires_grad);
+    }
+
+    if (axis < 0 || axis >= tensor.ndim) {
+        throw std::invalid_argument("ERROR: Invalid axis for sum operation.");
+    }
+
+    std::vector<int> new_shape = tensor.shape;
+    new_shape[axis] = 1;
+
+    Tensor<T> result(new_shape, tensor.requires_grad);
+    std::fill(result.data, result.data + result.size, static_cast<T>(0));
+
+    for (int i = 0; i < tensor.size; ++i) {
+        int result_index = 0;
+        int original_index_temp = i;
+
+        for (int dim = 0; dim < tensor.ndim; ++dim) {
+            int coord = (original_index_temp / tensor.stride[dim]) % tensor.shape[dim];
+            if (dim != axis) {
+                result_index += coord * result.stride[dim];
+            }
+        }
+        result.data[result_index] += tensor.data[i];
+    }
+
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&tensor));
+        result.grad_fn = std::make_unique<SumBackward<T>>(const_cast<Tensor<T>*>(&tensor), axis);
+    }
+
+    return result;
+}
+
 #endif
