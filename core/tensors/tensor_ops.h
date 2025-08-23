@@ -6,7 +6,7 @@
 #include "tensor.h"
 #include <vector>
 #include <cmath>
-#include "autograd/autograd_elementwise.h"
+#include "autograd/autograd_ops.h"
 
 template<typename T>
 void check_tensor_validity(const Tensor<T>& a, const Tensor<T>& b) {
@@ -254,7 +254,8 @@ Tensor<T> mat_mul(Tensor<T> &a, Tensor<T> &b){
         );
     }
 
-    Tensor<T> result({m, n});
+    bool result_requires_grad = a.requires_grad || b.requires_grad;
+    Tensor<T> result({m, n}, result_requires_grad);
 
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
@@ -266,6 +267,34 @@ Tensor<T> mat_mul(Tensor<T> &a, Tensor<T> &b){
             }
             int idx_res = i * result.stride[0] + j * result.stride[1];
             result.data[idx_res] = sum;
+        }
+    }
+
+    if (result.requires_grad) {
+        result.parents.push_back(const_cast<Tensor<T>*>(&a));
+        result.parents.push_back(const_cast<Tensor<T>*>(&b));
+        result.grad_fn = std::make_unique<MatMulBackward<T>>(const_cast<Tensor<T>*>(&a), const_cast<Tensor<T>*>(&b));
+    }
+
+    return result;
+
+}
+
+template<typename T>
+Tensor<T> transpose(const Tensor<T>& a) {
+    if (a.ndim != 2) { // for now, I want to implement only for 2d tensors
+        throw std::invalid_argument("ERROR: Transpose is currently only implemented for 2D tensors.");
+    }
+
+    std::vector<int> new_shape = {a.shape[1], a.shape[0]};
+
+    Tensor<T> result(new_shape, a.requires_grad);
+
+    for (int i=0; i<a.shape[0], i++){
+        for (int j=0; j<a.shape[1], j++){
+            int old_index = i * a.stride[0] + j * a.stride[1];
+            int new_index = j * result.stride[0] + i * result.stride[1];
+            result.data[new_index] = a.data[old_index];
         }
     }
 
