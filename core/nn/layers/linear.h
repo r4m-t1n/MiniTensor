@@ -4,7 +4,10 @@
 #include "nn/base.h"
 #include "tensors/tensor.h"
 #include "tensors/tensor_ops.h"
+#include "nn/initializers/base.h"
+#include "nn/initializers/initializers.h" 
 #include <vector>
+#include <memory>
 
 template<typename T>
 class Linear : public Layer<T> {
@@ -15,13 +18,20 @@ private:
     std::unique_ptr<Tensor<T>> input_cache;
 
 public:
-    Linear(int input_features, int output_features)
+    Linear(int input_features, int output_features,
+           std::unique_ptr<Initializer<T>> weight_init = std::make_unique<HeNormal<T>>(),
+           std::unique_ptr<Initializer<T>> bias_init = std::make_unique<Constant_Val<T>>(0.0f))
         : weights({input_features, output_features}, true),
           bias({1, output_features}, true) {
-
+        
+        weight_init->initialize(this->weights);
+        bias_init->initialize(this->bias);
     }
 
     Tensor<T> forward(const Tensor<T>& input) override {
+
+        this->input_cache = std::make_unique<Tensor<T>>(input.data, input.shape);
+
 
         Tensor<T> output = mat_mul(input, this->weights);
         output = output + this->bias; 
