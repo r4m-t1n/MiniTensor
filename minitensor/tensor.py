@@ -1,10 +1,6 @@
-import os
-import sys
 from typing import List
 
-sys.path.append(os.path.join(os.path.dirname(__file__)))
-
-from . import minitensor_cpp as mtc
+from minitensor.backend import get_backend, is_dtype_valid
 
 class Tensor:
     def __init__(self, data: List, shape: List[int], dtype: str, requires_grad: bool = False):
@@ -18,18 +14,11 @@ class Tensor:
             raise TypeError("ERROR: Unsupported data type. Only int, float and double are supported.")
 
         self.dtype = dtype
-        if (dtype == "int32") or (dtype == "int"):
-            self._tensor = mtc.int32.Tensor(data, shape, requires_grad)
 
-        elif (dtype == "float32") or (dtype == "float"):
-            self._tensor = mtc.float32.Tensor(data, shape, requires_grad)
+        self.backend = get_backend(dtype)
 
-        elif (dtype == "float64") or (dtype == "double"):
-            self._tensor = mtc.float64.Tensor(data, shape, requires_grad)
+        self._tensor = self.backend.Tensor(data, shape, requires_grad)
 
-        else:
-            raise TypeError("ERROR: Unsupported data type. Only int, float and double are supported.")
-    
     @property
     def shape(self) -> tuple:
         return tuple(self._tensor.shape)
@@ -181,14 +170,5 @@ def tensor(data: list, shape: list = None, dtype: str = None, requires_grad: boo
     if shape is None:
         shape = [len(data)]
 
-    if (dtype == "int32") or (dtype == "int"):
-        return Tensor(data, shape, "int", requires_grad)
-
-    elif (dtype == "float32") or (dtype == "float"):
-        return Tensor(data, shape, "float", requires_grad)
-
-    elif (dtype == "float64") or (dtype == "double"):
-        return Tensor(data, shape, "double", requires_grad)
-
-    else:
-        raise TypeError("ERROR: Unsupported data type. Only int, float and double are supported.")
+    if is_dtype_valid(dtype):
+        return Tensor(data, shape, dtype, requires_grad)
