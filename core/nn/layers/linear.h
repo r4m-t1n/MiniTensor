@@ -1,50 +1,46 @@
 #ifndef LINEAR_H
 #define LINEAR_H
 
-#include "nn/base.h"
+#include <variant>
+#include <type_traits>
 #include "tensors/tensor.h"
-#include "tensors/tensor_ops.h"
-#include "nn/initializers/base.h"
-#include "nn/initializers/initializers.h" 
-#include <vector>
-#include <memory>
+#include "nn/initializers/initializers.h"
 
 template<typename T>
-class Linear : public Layer<T> {
+using Initializer = typename std::conditional_t<
+    std::is_floating_point_v<T>,
+    std::variant<HeNormal<T>, XavierUniform<T>, Constant_Val<T>>,
+    std::variant<Constant_Val<T>>
+>;
+
+template<typename T>
+class Linear {
 private:
     Tensor<T> weights;
     Tensor<T> bias;
-
     std::unique_ptr<Tensor<T>> input_cache;
 
 public:
     Linear(int input_features, int output_features,
-           std::unique_ptr<Initializer<T>> weight_init = std::make_unique<HeNormal<T>>(),
-           std::unique_ptr<Initializer<T>> bias_init = std::make_unique<Constant_Val<T>>(0.0f))
+           Initializer<T> weight_init,
+           Initializer<T> bias_init)
         : weights({input_features, output_features}, true),
           bias({1, output_features}, true) {
         
-        weight_init->initialize(this->weights);
-        bias_init->initialize(this->bias);
+        std::visit([this](auto&& arg){ arg.initialize(this->weights); }, weight_init);
+        std::visit([this](auto&& arg){ arg.initialize(this->bias); }, bias_init);
     }
 
-    Tensor<T> forward(const Tensor<T>& input) override {
-
+    Tensor<T> forward(const Tensor<T>& input) {
         this->input_cache = std::make_unique<Tensor<T>>(input.data, input.shape);
-
-
         Tensor<T> output = mat_mul(input, this->weights);
-        output = output + this->bias; 
-
-        return output;
+        return output + this->bias;
     }
 
-    Tensor<T> backward(const Tensor<T>& output_gradient) override {
+    Tensor<T> backward(const Tensor<T>& output_gradient) {
         Tensor<T> grad_bias = sum(output_gradient, 0);
-
         Tensor<T> input_transposed = transpose(*(this->input_cache));
         Tensor<T> grad_weights = mat_mul(input_transposed, output_gradient);
-
         Tensor<T> weights_transposed = transpose(this->weights);
         Tensor<T> grad_input = mat_mul(output_gradient, weights_transposed);
 
@@ -63,7 +59,7 @@ public:
         return grad_input;
     }
 
-    std::vector<Tensor<T>*> parameters() override {
+    std::vector<Tensor<T>*> parameters() {
         return {&weights, &bias};
     }
 };
