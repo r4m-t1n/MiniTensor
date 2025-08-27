@@ -7,6 +7,7 @@
 #include <vector>
 #include <cmath>
 #include "autograd/autograd_ops.h"
+#include "autograd/autograd_reduction.h"
 
 template<typename T>
 void check_tensor_validity(const Tensor<T>& a, const Tensor<T>& b) {
@@ -235,7 +236,7 @@ Tensor<T> operator/(U scalar, const Tensor<T>& tensor) {
 }
 
 template<typename T>
-Tensor<T> mat_mul(Tensor<T> &a, Tensor<T> &b){
+Tensor<T> mat_mul(const Tensor<T> &a, const Tensor<T> &b){
     if (a.ndim != 2 || b.ndim != 2){
         throw std::invalid_argument("ERROR: Both tensors must be 2D matrices");
     }
@@ -290,8 +291,8 @@ Tensor<T> transpose(const Tensor<T>& a) {
 
     Tensor<T> result(new_shape, a.requires_grad);
 
-    for (int i=0; i<a.shape[0], i++){
-        for (int j=0; j<a.shape[1], j++){
+    for (int i=0; i<a.shape[0]; i++){
+        for (int j=0; j<a.shape[1]; j++){
             int old_index = i * a.stride[0] + j * a.stride[1];
             int new_index = j * result.stride[0] + i * result.stride[1];
             result.data[new_index] = a.data[old_index];
