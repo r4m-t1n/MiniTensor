@@ -66,4 +66,8 @@ class Linear:
         return self.forward(x)
 
     def __repr__(self):
-        repr(self._linear)
+        base_repr = repr(self._linear)
+        if self.activation:
+            return f"{base_repr[:-1]}, activation='{self.activation}')"
+        else:
+            return base_repr

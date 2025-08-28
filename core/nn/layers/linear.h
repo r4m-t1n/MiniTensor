@@ -8,6 +8,12 @@
 #include "nn/initializers/initializers.h"
 
 template<typename T>
+class Linear;
+
+template<typename T>
+std::string linear_repr(const Linear<T>& linear_layer);
+
+template<typename T>
 using Initializer = typename std::conditional_t<
     std::is_floating_point_v<T>,
     std::variant<HeNormal<T>, XavierUniform<T>, Constant_Val<T>>,

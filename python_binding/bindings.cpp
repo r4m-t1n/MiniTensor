@@ -78,7 +78,7 @@ void define_bindings_for_type(py::module_& m, const std::string& type_name) {
      }
 
      linear_cls.def("forward", &Linear<T>::forward);
-     linear_cls.def("parameters", &Linear<T>::parameters);
+     linear_cls.def("parameters", &Linear<T>::parameters, py::return_value_policy::reference_internal);
      linear_cls.def("__repr__", &linear_repr<T>);
 }
 
