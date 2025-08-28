@@ -3,6 +3,7 @@
 
 #include <variant>
 #include <type_traits>
+#include <string>
 #include "tensors/tensor.h"
 #include "nn/initializers/initializers.h"
 
@@ -19,13 +20,18 @@ private:
     Tensor<T> weights;
     Tensor<T> bias;
     std::unique_ptr<Tensor<T>> input_cache;
+    int input_f;
+    int output_f;
+    friend std::string linear_repr<T>(const Linear<T>&);
 
 public:
     Linear(int input_features, int output_features,
            Initializer<T> weight_init,
            Initializer<T> bias_init)
         : weights({input_features, output_features}, true),
-          bias({1, output_features}, true) {
+          bias({1, output_features}, true),
+          input_f(input_features),
+          output_f(output_features) {
         
         std::visit([this](auto&& arg){ arg.initialize(this->weights); }, weight_init);
         std::visit([this](auto&& arg){ arg.initialize(this->bias); }, bias_init);
@@ -63,5 +69,24 @@ public:
         return {&weights, &bias};
     }
 };
+
+template<typename T>
+std::string linear_repr(const Linear<T>& linear_layer) {
+    std::string dtype_name;
+    if (std::is_same_v<T, int>) {
+        dtype_name = "int32";
+    } else if (std::is_same_v<T, float>) {
+        dtype_name = "float32";
+    } else if (std::is_same_v<T, double>) {
+        dtype_name = "float64";
+    } else {
+        dtype_name = "unknown";
+    }
+
+    return "Linear(in_features=" + std::to_string(linear_layer.input_f) +
+           ", out_features=" + std::to_string(linear_layer.output_f) +
+           ", dtype='" + dtype_name + "')";
+}
+
 
 #endif
