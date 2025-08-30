@@ -1,19 +1,30 @@
 #ifndef MSE_H
 #define MSE_H
 
-#include <iostream>
 #include "tensors/tensor.h"
 #include "tensors/tensor_ops.h"
+#include "autograd/autograd_losses.h"
 
 template<typename T>
-T mse_loss(const Tensor<T>& y, const Tensor<T>& y_hat) {
+Tensor<T> mse_loss(Tensor<T>& y, Tensor<T>& y_hat) {
     check_tensor_validity(y, y_hat);
-    T loss = static_cast<T>(0);
+    T loss_val = static_cast<T>(0);
     for (int i = 0; i < y.size; ++i) {
-        T diff = y.data[i] - y_hat.data[i];
-        loss += diff * diff;
+        T diff = y_hat.data[i] - y.data[i];
+        loss_val += diff * diff;
     }
-    return loss / static_cast<T>(y.size);
+    loss_val /= static_cast<T>(y.size);
+
+    bool result_requires_grad = y.requires_grad || y_hat.requires_grad;
+    Tensor<T> result({loss_val}, {1}, result_requires_grad);
+
+    if (result.requires_grad) {
+        result.parents.push_back(&y);
+        result.parents.push_back(&y_hat);
+        result.grad_fn = std::make_unique<MseLossBackward<T>>(&y, &y_hat);
+    }
+
+    return result;
 }
 
 #endif
