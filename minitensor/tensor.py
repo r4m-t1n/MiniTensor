@@ -55,6 +55,9 @@ class Tensor:
     def backward(self):
         self._tensor.backward()
 
+    def zero_grad(self):
+        self._tensor.zero_grad()
+
     @property
     def listed(self) -> list:
         return self._tensor.to_vector()

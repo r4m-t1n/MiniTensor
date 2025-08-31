@@ -156,6 +156,14 @@ public:
             grad_fn->backward(*grad);
         }
     }
+
+    void zero_grad() {
+        if (grad != nullptr) {
+            for (int i = 0; i < size; ++i) {
+                grad->data[i] = static_cast<T>(0);
+            }
+        }
+    }
 };
 
 template<typename T>

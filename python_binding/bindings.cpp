@@ -29,6 +29,7 @@ void define_bindings_for_type(py::module_& m, const std::string& type_name) {
           .def_readwrite("grad", &Tensor<T>::grad)
 
           .def("backward", &Tensor<T>::backward)
+          .def("zero_grad", &Tensor<T>::zero_grad) 
           .def("to_vector", &to_vector<T>)
           .def("to_nested", &to_nested_wrapper<T>)
 
