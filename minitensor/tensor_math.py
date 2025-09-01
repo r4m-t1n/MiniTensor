@@ -16,15 +16,15 @@ def math_wrapper(func, *args):
 
 def sqrt(tensor: Tensor) -> Tensor:
     backend = get_backend(tensor.dtype)
-    return math_wrapper(backend.sqrt)
+    return math_wrapper(backend.sqrt, tensor)
 
 def log(tensor: Tensor) -> Tensor:
     backend = get_backend(tensor.dtype)
-    return math_wrapper(backend.log)
+    return math_wrapper(backend.log, tensor)
 
 def exp(tensor: Tensor) -> Tensor:
     backend = get_backend(tensor.dtype)
-    return math_wrapper(backend.exp)
+    return math_wrapper(backend.exp, tensor)
 
 def pow(tensor: Tensor, exponent: float) -> Tensor:
     backend = get_backend(tensor.dtype)
@@ -32,12 +32,12 @@ def pow(tensor: Tensor, exponent: float) -> Tensor:
 
 def sin(tensor: Tensor) -> Tensor:
     backend = get_backend(tensor.dtype)
-    return math_wrapper(backend.sin)
+    return math_wrapper(backend.sin, tensor)
 
 def cos(tensor: Tensor) -> Tensor:
     backend = get_backend(tensor.dtype)
-    return math_wrapper(backend.cos)
+    return math_wrapper(backend.cos, tensor)
 
 def tan(tensor: Tensor) -> Tensor:
     backend = get_backend(tensor.dtype)
-    return math_wrapper(backend.tan)
+    return math_wrapper(backend.tan, tensor)
