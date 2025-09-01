@@ -66,10 +66,11 @@ class Tensor:
     def nested(self) -> list:
         return self._tensor.to_nested()
 
-    def _new_tensor(self, result, requires_grad: bool):
-        new_python_tensor = Tensor.__new__(Tensor)
+    @classmethod
+    def _new_tensor(cls, result, dtype: str, requires_grad: bool=False):
+        new_python_tensor = cls.__new__(cls)
         new_python_tensor._tensor = result
-        new_python_tensor.dtype = self.dtype
+        new_python_tensor.dtype = dtype
         if requires_grad:
             new_python_tensor.requires_grad = True
         return new_python_tensor
@@ -83,7 +84,7 @@ class Tensor:
             requires_grad = self.requires_grad or other.requires_grad
         else:
             raise TypeError(f"ERROR: Unsupported operand type for @: 'Tensor' and '{type(other).__name__}'")
-        return self._new_tensor(result, requires_grad)
+        return self._new_tensor(result, self.dtype, requires_grad)
 
     def __add__(self, other):
         if isinstance(other, Tensor):
@@ -94,7 +95,7 @@ class Tensor:
             requires_grad = self.requires_grad
         else:
             raise TypeError(f"ERROR: Unsupported operand type for +: 'Tensor' and '{type(other).__name__}'")
-        return self._new_tensor(result, requires_grad)
+        return self._new_tensor(result, self.dtype, requires_grad)
 
     def __sub__(self, other):
         if isinstance(other, Tensor):
@@ -105,7 +106,7 @@ class Tensor:
             requires_grad = self.requires_grad
         else:
             raise TypeError(f"ERROR: Unsupported operand type for -: 'Tensor' and '{type(other).__name__}'")
-        return self._new_tensor(result, requires_grad)
+        return self._new_tensor(result, self.dtype, requires_grad)
 
     def __mul__(self, other):
         if isinstance(other, Tensor):
@@ -116,7 +117,7 @@ class Tensor:
             requires_grad = self.requires_grad
         else:
             raise TypeError(f"ERROR: Unsupported operand type for *: 'Tensor' and '{type(other).__name__}'")
-        return self._new_tensor(result, requires_grad)
+        return self._new_tensor(result, self.dtype, requires_grad)
 
     def __truediv__(self, other):
         if isinstance(other, Tensor):
@@ -127,7 +128,7 @@ class Tensor:
             requires_grad = self.requires_grad
         else:
             raise TypeError(f"ERROR: Unsupported operand type for /: 'Tensor' and '{type(other).__name__}'")
-        return self._new_tensor(result, requires_grad)
+        return self._new_tensor(result, self.dtype, requires_grad)
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -141,7 +142,7 @@ class Tensor:
             requires_grad = self.requires_grad
         else:
             raise TypeError(f"ERROR: Unsupported operand type for -: 'Tensor' and '{type(other).__name__}'")
-        return self._new_tensor(result, requires_grad)
+        return self._new_tensor(result, self.dtype, requires_grad)
 
     def __rmul__(self, other):
         return self.__mul__(other)
@@ -155,7 +156,7 @@ class Tensor:
             requires_grad = self.requires_grad
         else:
             raise TypeError(f"ERROR: Unsupported operand type for /: 'Tensor' and '{type(other).__name__}'")
-        return self._new_tensor(result, requires_grad)
+        return self._new_tensor(result, self.dtype, requires_grad)
 
 def tensor(data: list, shape: list = None, dtype: str = None, requires_grad: bool = False) -> Tensor:
     if not data:
