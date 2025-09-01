@@ -46,10 +46,8 @@ class Tensor:
     @property
     def grad(self):
         if self.requires_grad and self._tensor.grad:
-            new_tensor = Tensor.__new__(Tensor)
-            new_tensor._tensor = self._tensor.grad
-            new_tensor.dtype = self.dtype
-            return new_tensor
+            requires_grad = False 
+            return self._new_tensor(self._tensor.grad, self.dtype, requires_grad)
         return None
 
     def backward(self):

@@ -6,13 +6,9 @@ class MAE:
         pass
 
     def __call__(self, y: Tensor, y_hat: Tensor) -> Tensor:
-
         backend = get_backend(y_hat.dtype)
-
         result = backend.mae_loss(y._tensor, y_hat._tensor)
 
-        loss_tensor = Tensor.__new__(Tensor)
-        loss_tensor._tensor = result
-        loss_tensor.dtype = y_hat.dtype
+        requires_grad = y.requires_grad or y_hat.requires_grad
 
-        return loss_tensor
+        return Tensor._new_tensor(result, y_hat.dtype, requires_grad)

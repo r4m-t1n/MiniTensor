@@ -45,11 +45,9 @@ class Linear:
         if self.activation_fn:
             result = self.activation_fn(result)
 
-        new_python_tensor = Tensor.__new__(Tensor)
-        new_python_tensor._tensor = result
-        new_python_tensor.dtype = self.dtype
-
-        return new_python_tensor
+        requires_grad = x.requires_grad
+        
+        return Tensor._new_tensor(result, self.dtype, requires_grad)
 
     @property
     def weight(self) -> Tensor:
