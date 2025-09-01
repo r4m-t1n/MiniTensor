@@ -6,6 +6,7 @@
 #include <pybind11/pytypes.h>
 #include "tensors/tensor.h"
 #include "tensors/tensor_ops.h"
+#include "tensors/tensor_math.h"
 #include "losses/mse.h"
 #include "nn/activations/relu.h"
 #include "nn/activations/tanh.h"
@@ -70,12 +71,28 @@ void define_bindings_for_type(py::module_& m, const std::string& type_name) {
                py::arg("output_features"),
                py::arg("weight_init") = HeNormal<T>{},
                py::arg("bias_init") = Constant_Val<T>{0.0f});
+
+          m_type.def("sqrt", &tensor_sqrt<T, T>);
+          m_type.def("log", &tensor_log<T, T>);
+          m_type.def("exp", &tensor_exp<T, T>);
+          m_type.def("pow", &tensor_pow<T, T>);
+          m_type.def("sin", &tensor_sin<T, T>);
+          m_type.def("cos", &tensor_cos<T, T>);
+          m_type.def("tan", &tensor_tan<T, T>);
      } else {
           linear_cls.def(py::init<int, int, Initializer<T>, Initializer<T>>(),
                py::arg("input_features"),
                py::arg("output_features"),
                py::arg("weight_init") = Constant_Val<T>{0},
                py::arg("bias_init") = Constant_Val<T>{0});
+
+          m_type.def("sqrt", &tensor_sqrt<int, float>);
+          m_type.def("log", &tensor_log<int, float>);
+          m_type.def("exp", &tensor_exp<int, float>);
+          m_type.def("pow", &tensor_pow<int, float>);
+          m_type.def("sin", &tensor_sin<int, float>);
+          m_type.def("cos", &tensor_cos<int, float>);
+          m_type.def("tan", &tensor_tan<int, float>);
      }
 
      linear_cls.def("forward", &Linear<T>::forward);
