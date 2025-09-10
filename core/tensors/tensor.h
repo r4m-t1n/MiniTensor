@@ -144,6 +144,15 @@ public:
         delete grad;
     }
 
+    void set_data(const Tensor<T>& other) {
+        if (this->size != other.size) {
+            throw std::runtime_error("ERROR: set_data requires tensors of the same size.");
+        }
+        for (int i = 0; i < this->size; i++) {
+            this->data[i] = other.data[i];
+        }
+    }
+
     void backward() {
         if (!requires_grad) {
             return;
