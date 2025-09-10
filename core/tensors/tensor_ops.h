@@ -6,6 +6,7 @@
 #include "tensor.h"
 #include <vector>
 #include <cmath>
+#include "tensors/tensor_broadcast.h"
 #include "autograd/autograd_ops.h"
 #include "autograd/autograd_reduction.h"
 
@@ -29,10 +30,10 @@ void check_tensor_validity(const Tensor<T>& a, const Tensor<T>& b) {
 
 template<typename T>
 Tensor<T> tensor_add(const Tensor<T>& a, const Tensor<T>& b) {
-    check_tensor_validity(a, b);
-    Tensor<T> result(a.shape, a.requires_grad || b.requires_grad);
-    for (int i = 0; i < a.size; ++i) {
-        result.data[i] = a.data[i] + b.data[i];
+    auto [a_broadcasted, b_broadcasted] = broadcast(a, b);
+    Tensor<T> result(a_broadcasted.shape, a.requires_grad || b.requires_grad);
+    for (int i = 0; i < a_broadcasted.size; ++i) {
+        result.data[i] = a_broadcasted.data[i] + b_broadcasted.data[i];
     }
     if (result.requires_grad) {
         result.parents.push_back(const_cast<Tensor<T>*>(&a));
@@ -41,13 +42,12 @@ Tensor<T> tensor_add(const Tensor<T>& a, const Tensor<T>& b) {
     }
     return result;
 }
-
 template<typename T>
 Tensor<T> tensor_sub(const Tensor<T>& a, const Tensor<T>& b) {
-    check_tensor_validity(a, b);
-    Tensor<T> result(a.shape, a.requires_grad || b.requires_grad);
-    for (int i = 0; i < a.size; ++i) {
-        result.data[i] = a.data[i] - b.data[i];
+    auto [a_broadcasted, b_broadcasted] = broadcast(a, b);
+    Tensor<T> result(a_broadcasted.shape, a.requires_grad || b.requires_grad);
+    for (int i = 0; i < a_broadcasted.size; ++i) {
+        result.data[i] = a_broadcasted.data[i] - b_broadcasted.data[i];
     }
     if (result.requires_grad) {
         result.parents.push_back(const_cast<Tensor<T>*>(&a));
@@ -59,10 +59,10 @@ Tensor<T> tensor_sub(const Tensor<T>& a, const Tensor<T>& b) {
 
 template<typename T>
 Tensor<T> tensor_mul(const Tensor<T>& a, const Tensor<T>& b) {
-    check_tensor_validity(a, b);
-    Tensor<T> result(a.shape, a.requires_grad || b.requires_grad);
-    for (int i = 0; i < a.size; ++i) {
-        result.data[i] = a.data[i] * b.data[i];
+    auto [a_broadcasted, b_broadcasted] = broadcast(a, b);
+    Tensor<T> result(a_broadcasted.shape, a.requires_grad || b.requires_grad);
+    for (int i = 0; i < a_broadcasted.size; ++i) {
+        result.data[i] = a_broadcasted.data[i] * b_broadcasted.data[i];
     }
     if (result.requires_grad) {
         result.parents.push_back(const_cast<Tensor<T>*>(&a));
@@ -74,13 +74,13 @@ Tensor<T> tensor_mul(const Tensor<T>& a, const Tensor<T>& b) {
 
 template<typename T>
 Tensor<T> tensor_div(const Tensor<T>& a, const Tensor<T>& b) {
-    check_tensor_validity(a, b);
-    Tensor<T> result(a.shape, a.requires_grad || b.requires_grad);
-    for (int i = 0; i < a.size; ++i) {
-        if (b.data[i] == static_cast<T>(0)) {
+    auto [a_broadcasted, b_broadcasted] = broadcast(a, b);
+    Tensor<T> result(a_broadcasted.shape, a.requires_grad || b.requires_grad);
+    for (int i = 0; i < a_broadcasted.size; ++i) {
+        if (b_broadcasted.data[i] == static_cast<T>(0)) {
             throw std::runtime_error("ERROR: Division by zero is not allowed");
         }
-        result.data[i] = a.data[i] / b.data[i];
+        result.data[i] = a_broadcasted.data[i] / b_broadcasted.data[i];
     }
     if (result.requires_grad) {
         result.parents.push_back(const_cast<Tensor<T>*>(&a));
