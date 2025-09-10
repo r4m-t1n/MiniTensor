@@ -1,12 +1,33 @@
-#ifndef ELEMENTWISE_H
-#define ELEMENTWISE_H
+#ifndef AUTOGRAD_OPS_H
+#define AUTOGRAD_OPS_H
 
+#include "tensors/tensor.h"
+#include "tensors/tensor_ops.h"
 #include <iostream>
 #include <stdexcept>
-#include "tensors/tensor.h"
 #include <vector>
 #include <memory>
 #include <cmath>
+
+template<typename T>
+Tensor<T> unbroadcast(const Tensor<T>& grad, const std::vector<int>& target_shape) {
+    if (grad.shape == target_shape) {
+        return Tensor<T>(grad.data, grad.shape);
+    }
+
+    Tensor<T> final_grad(grad.data, grad.shape);
+    while (final_grad.ndim > target_shape.size()) {
+        final_grad = sum(final_grad, 0);
+    }
+
+    for (int i = 0; i < final_grad.ndim; ++i) {
+        if (final_grad.shape[i] > target_shape[i]) {
+            final_grad = sum(final_grad, i);
+        }
+    }
+
+    return final_grad;
+}
 
 template<typename T>
 struct AddBackward : public Function<T> {
@@ -16,27 +37,25 @@ struct AddBackward : public Function<T> {
     }
     void backward(const Tensor<T>& grad_out) override {
         if (parents[0]->requires_grad) {
+            Tensor<T> grad_a = unbroadcast(grad_out, parents[0]->shape);
             if (parents[0]->grad == nullptr) {
-                parents[0]->grad = new Tensor<T>(grad_out.data, grad_out.shape);
+                parents[0]->grad = new Tensor<T>(grad_a.data, grad_a.shape);
             } else {
-                for (int i = 0; i < parents[0]->size; ++i) {
-                    parents[0]->grad->data[i] += grad_out.data[i];
-                }
+                *(parents[0]->grad) = *(parents[0]->grad) + grad_a;
             }
             if (parents[0]->grad_fn) {
-                parents[0]->grad_fn->backward(grad_out);
+                parents[0]->grad_fn->backward(grad_a);
             }
         }
         if (parents[1]->requires_grad) {
+            Tensor<T> grad_b = unbroadcast(grad_out, parents[1]->shape);
             if (parents[1]->grad == nullptr) {
-                parents[1]->grad = new Tensor<T>(grad_out.data, grad_out.shape);
+                parents[1]->grad = new Tensor<T>(grad_b.data, grad_b.shape);
             } else {
-                for (int i = 0; i < parents[1]->size; ++i) {
-                    parents[1]->grad->data[i] += grad_out.data[i];
-                }
+                *(parents[1]->grad) = *(parents[1]->grad) + grad_b;
             }
             if (parents[1]->grad_fn) {
-                parents[1]->grad_fn->backward(grad_out);
+                parents[1]->grad_fn->backward(grad_b);
             }
         }
     }
@@ -51,15 +70,14 @@ struct SubBackward : public Function<T> {
     }
     void backward(const Tensor<T>& grad_out) override {
         if (parents[0]->requires_grad) {
+            Tensor<T> grad_a = unbroadcast(grad_out, parents[0]->shape);
             if (parents[0]->grad == nullptr) {
-                parents[0]->grad = new Tensor<T>(grad_out.data, grad_out.shape);
+                parents[0]->grad = new Tensor<T>(grad_a.data, grad_a.shape);
             } else {
-                for (int i = 0; i < parents[0]->size; ++i) {
-                    parents[0]->grad->data[i] += grad_out.data[i];
-                }
+                *(parents[0]->grad) = *(parents[0]->grad) + grad_a;
             }
             if (parents[0]->grad_fn) {
-                parents[0]->grad_fn->backward(grad_out);
+                parents[0]->grad_fn->backward(grad_a);
             }
         }
         if (parents[1]->requires_grad) {
@@ -68,12 +86,11 @@ struct SubBackward : public Function<T> {
                 neg_grad_data[i] = -grad_out.data[i];
             }
             Tensor<T> neg_grad(neg_grad_data, grad_out.shape);
+            Tensor<T> grad_b = unbroadcast(neg_grad, parents[1]->shape);
             if (parents[1]->grad == nullptr) {
-                parents[1]->grad = new Tensor<T>(neg_grad.data, neg_grad.shape);
+                parents[1]->grad = new Tensor<T>(grad_b.data, grad_b.shape);
             } else {
-                for (int i = 0; i < parents[1]->size; ++i) {
-                    parents[1]->grad->data[i] += neg_grad.data[i];
-                }
+                *(parents[1]->grad) = *(parents[1]->grad) + grad_b;
             }
             if (parents[1]->grad_fn) {
                 parents[1]->grad_fn->backward(neg_grad);
@@ -91,34 +108,24 @@ struct MulBackward : public Function<T> {
     }
     void backward(const Tensor<T>& grad_out) override {
         if (parents[0]->requires_grad) {
-            std::vector<T> grad_a_data(grad_out.size);
-            for (int i = 0; i < grad_out.size; ++i) {
-                grad_a_data[i] = grad_out.data[i] * parents[1]->data[i];
-            }
-            Tensor<T> grad_a(grad_a_data, grad_out.shape);
+            Tensor<T> grad_a_unsummed = grad_out * *(parents[1]);
+            Tensor<T> grad_a = unbroadcast(grad_a_unsummed, parents[0]->shape);
             if (parents[0]->grad == nullptr) {
                 parents[0]->grad = new Tensor<T>(grad_a.data, grad_a.shape);
             } else {
-                for (int i = 0; i < parents[0]->size; ++i) {
-                    parents[0]->grad->data[i] += grad_a.data[i];
-                }
+                *(parents[0]->grad) = *(parents[0]->grad) + grad_a;
             }
             if (parents[0]->grad_fn) {
                 parents[0]->grad_fn->backward(grad_a);
             }
         }
         if (parents[1]->requires_grad) {
-            std::vector<T> grad_b_data(grad_out.size);
-            for (int i = 0; i < grad_out.size; ++i) {
-                grad_b_data[i] = grad_out.data[i] * parents[0]->data[i];
-            }
-            Tensor<T> grad_b(grad_b_data, grad_out.shape);
+            Tensor<T> grad_b_unsummed = grad_out * *(parents[0]);
+            Tensor<T> grad_b = unbroadcast(grad_b_unsummed, parents[1]->shape);
             if (parents[1]->grad == nullptr) {
                 parents[1]->grad = new Tensor<T>(grad_b.data, grad_b.shape);
             } else {
-                for (int i = 0; i < parents[1]->size; ++i) {
-                    parents[1]->grad->data[i] += grad_b.data[i];
-                }
+                *(parents[1]->grad) = *(parents[1]->grad) + grad_b;
             }
             if (parents[1]->grad_fn) {
                 parents[1]->grad_fn->backward(grad_b);
@@ -136,40 +143,24 @@ struct DivBackward : public Function<T> {
     }
     void backward(const Tensor<T>& grad_out) override {
         if (parents[0]->requires_grad) {
-            std::vector<T> grad_a_data(grad_out.size);
-            for (int i = 0; i < grad_out.size; ++i) {
-                if (parents[1]->data[i] == static_cast<T>(0)) {
-                    throw std::runtime_error("ERROR: Division by zero is not allowed");
-                }
-                grad_a_data[i] = grad_out.data[i] / parents[1]->data[i];
-            }
-            Tensor<T> grad_a(grad_a_data, grad_out.shape);
+            Tensor<T> grad_a_unsummed = grad_out / *(parents[1]);
+            Tensor<T> grad_a = unbroadcast(grad_a_unsummed, parents[0]->shape);
             if (parents[0]->grad == nullptr) {
                 parents[0]->grad = new Tensor<T>(grad_a.data, grad_a.shape);
             } else {
-                for (int i = 0; i < parents[0]->size; ++i) {
-                    parents[0]->grad->data[i] += grad_a.data[i];
-                }
+                *(parents[0]->grad) = *(parents[0]->grad) + grad_a;
             }
             if (parents[0]->grad_fn) {
                 parents[0]->grad_fn->backward(grad_a);
             }
         }
         if (parents[1]->requires_grad) {
-            std::vector<T> grad_b_data(grad_out.size);
-            for (int i = 0; i < grad_out.size; ++i) {
-                if (parents[1]->data[i] == static_cast<T>(0)) {
-                    throw std::runtime_error("ERROR: Division by zero is not allowed");
-                }
-                grad_b_data[i] = grad_out.data[i] * (-parents[0]->data[i] / (parents[1]->data[i] * parents[1]->data[i]));
-            }
-            Tensor<T> grad_b(grad_b_data, grad_out.shape);
+            Tensor<T> grad_b_unsummed = grad_out * ((static_cast<T>(0) - *(parents[0])) / (*(parents[1]) * *(parents[1])));
+            Tensor<T> grad_b = unbroadcast(grad_b_unsummed, parents[1]->shape);
             if (parents[1]->grad == nullptr) {
                 parents[1]->grad = new Tensor<T>(grad_b.data, grad_b.shape);
             } else {
-                for (int i = 0; i < parents[1]->size; ++i) {
-                    parents[1]->grad->data[i] += grad_b.data[i];
-                }
+                *(parents[1]->grad) = *(parents[1]->grad) + grad_b;
             }
             if (parents[1]->grad_fn) {
                 parents[1]->grad_fn->backward(grad_b);
