@@ -10,7 +10,7 @@ class SGD:
         for p in self.params:
             if p.grad is not None:
                 updated_tensor = p - (self.lr * p.grad)
-                p._tensor = updated_tensor._tensor
+                p.set_data(updated_tensor)
 
     def zero_grad(self):
         for p in self.params:
