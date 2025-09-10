@@ -34,7 +34,7 @@ public:
     Linear(int input_features, int output_features,
            Initializer<T> weight_init,
            Initializer<T> bias_init)
-        : weights({input_features, output_features}, true),
+        : weights({output_features, input_features}, true),
           bias({1, output_features}, true),
           input_f(input_features),
           output_f(output_features) {
@@ -45,14 +45,14 @@ public:
 
     Tensor<T> forward(const Tensor<T>& input) {
         this->input_cache = std::make_unique<Tensor<T>>(input.data, input.shape);
-        Tensor<T> output = mat_mul(input, this->weights);
+        Tensor<T> output = mat_mul(input, transpose(this->weights));
         return output + this->bias;
     }
 
     Tensor<T> backward(const Tensor<T>& output_gradient) {
         Tensor<T> grad_bias = sum(output_gradient, 0);
         Tensor<T> input_transposed = transpose(*(this->input_cache));
-        Tensor<T> grad_weights = mat_mul(input_transposed, output_gradient);
+        Tensor<T> grad_weights = transpose(mat_mul(input_transposed, output_gradient));
         Tensor<T> weights_transposed = transpose(this->weights);
         Tensor<T> grad_input = mat_mul(output_gradient, weights_transposed);
 
