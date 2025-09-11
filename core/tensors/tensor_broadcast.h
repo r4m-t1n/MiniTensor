@@ -33,7 +33,9 @@ Tensor<T> expand_tensor(const Tensor<T>& tensor, const std::vector<int>& target_
     std::vector<int> broadcast_strides(target_ndim, 0);
     int shape_diff = target_ndim - tensor_ndim;
     for (int i = 0; i < tensor_ndim; ++i) {
-        if (tensor.shape[i] == target_shape[i + shape_diff]) {
+        if (tensor.shape[i] == 1) {
+            broadcast_strides[i + shape_diff] = 0;
+        } else {
             broadcast_strides[i + shape_diff] = tensor.stride[i];
         }
     }
@@ -56,8 +58,11 @@ Tensor<T> expand_tensor(const Tensor<T>& tensor, const std::vector<int>& target_
 template<typename T>
 std::pair<Tensor<T>, Tensor<T>> broadcast(const Tensor<T>& a, const Tensor<T>& b) {
     std::vector<int> result_shape = broadcast_shape(a.shape, b.shape);
-    Tensor<T> a_broadcasted = expand_tensor(a, result_shape);
-    Tensor<T> b_broadcasted = expand_tensor(b, result_shape);
+    Tensor<T> a_broadcasted = (a.shape == result_shape) ? Tensor<T>(
+        std::vector<T>(a.data, a.data + a.size), a.shape) : expand_tensor(a, result_shape);
+    Tensor<T> b_broadcasted = (b.shape == result_shape) ? Tensor<T>(
+        std::vector<T>(b.data, b.data + b.size), b.shape) : expand_tensor(b, result_shape);
+    
     return { std::move(a_broadcasted), std::move(b_broadcasted) };
 }
 
