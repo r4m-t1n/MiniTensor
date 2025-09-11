@@ -3,14 +3,15 @@
 
 #include <random>
 #include <cmath>
+#include <cstddef>
+#include "tensors/tensor.h"
 
 template<typename T>
 class HeNormal {
 public:
     void initialize(Tensor<T>& weights) {
         if (weights.data == nullptr || weights.ndim < 2) return;
-
-        size_t fan_in = weights.shape[0];
+        size_t fan_in = weights.shape[1];
         double std_dev = std::sqrt(2.0 / fan_in);
 
         std::random_device rd;
