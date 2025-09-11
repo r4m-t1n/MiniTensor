@@ -33,6 +33,7 @@ void define_bindings_for_type(py::module_& m, const std::string& type_name) {
           .def("zero_grad", &Tensor<T>::zero_grad) 
           .def("to_vector", &to_vector<T>)
           .def("to_nested", &to_nested_wrapper<T>)
+          .def("set_data", &Tensor<T>::set_data)
 
           .def("__repr__", &tensor_repr<T>)
           .def("__matmul__", &mat_mul<T>)
