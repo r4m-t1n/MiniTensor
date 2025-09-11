@@ -3,6 +3,8 @@
 
 #include <random>
 #include <cmath>
+#include <cstddef>
+#include "tensors/tensor.h"
 
 template<typename T>
 class XavierUniform {
@@ -10,8 +12,8 @@ public:
     void initialize(Tensor<T>& weights) {
         if (weights.data == nullptr || weights.ndim < 2) return;
 
-        size_t fan_in = weights.shape[0];
-        size_t fan_out = weights.shape[1];
+        size_t fan_in = weights.shape[1];
+        size_t fan_out = weights.shape[0];
         double limit = std::sqrt(6.0 / (fan_in + fan_out));
 
         std::random_device rd;
