@@ -6,12 +6,10 @@
 #include "tensors/tensor.h"
 #include "tensors/tensor_ops.h"
 #include "tensors/tensor_math.h"
-#include "losses/mse.h"
-#include "losses/mae.h"
-#include "nn/activations/relu.h"
-#include "nn/activations/tanh.h"
+#include "losses/losses.h"
+#include "nn/activations/activations.h"
+#include "nn/layers/layers.h"
 #include "nn/initializers/initializers.h"
-#include "nn/layers/linear.h"
 
 namespace py = pybind11;
 
