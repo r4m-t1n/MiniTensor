@@ -66,4 +66,20 @@ std::pair<Tensor<T>, Tensor<T>> broadcast(const Tensor<T>& a, const Tensor<T>& b
     return { std::move(a_broadcasted), std::move(b_broadcasted) };
 }
 
+template<typename T>
+Tensor<T> unbroadcast(const Tensor<T>& grad, const std::vector<int>& target_shape) {
+    auto current_grad = std::make_shared<Tensor<T>>(std::vector<T>(grad.data, grad.data + grad.size), grad.shape);
+
+    while (current_grad->ndim > target_shape.size()) {
+        current_grad = sum(current_grad, 0);
+    }
+
+    for (int i = 0; i < current_grad->ndim; ++i) {
+        if (current_grad->shape[i] > target_shape[i]) {
+            current_grad = sum(current_grad, i);
+        }
+    }
+    return Tensor<T>(std::vector<T>(current_grad->data, current_grad->data + current_grad->size), current_grad->shape);
+}
+
 #endif
