@@ -8,22 +8,24 @@
 
 template<typename T>
 struct ReluBackward : public Function<T> {
-    Tensor<T>* parent_input;
+    std::shared_ptr<Tensor<T>> parent_input;
 
-    ReluBackward(Tensor<T>* a) : parent_input(a) {}
+    ReluBackward(std::shared_ptr<Tensor<T>> a) : parent_input(a) {}
 
-    void backward(const Tensor<T>& grad_out) override {
+    void backward(std::shared_ptr<Tensor<T>> grad_out) override {
         if (parent_input->requires_grad) {
-            std::vector<T> grad_a_data(grad_out.size);
-            for (int i = 0; i < grad_out.size; ++i) {
-                grad_a_data[i] = (parent_input->data[i] > 0) ? grad_out.data[i] : static_cast<T>(0);
+            auto grad_a_data = std::vector<T>(grad_out->size);
+            for (int i = 0; i < grad_out->size; ++i) {
+                grad_a_data[i] = (parent_input->data[i] > 0) ? grad_out->data[i] : static_cast<T>(0);
             }
-            Tensor<T> grad_a(grad_a_data, grad_out.shape);
-            if (parent_input->grad == nullptr) {
-                parent_input->grad = new Tensor<T>(grad_a.data, grad_a.shape);
+            
+            auto grad_a = std::make_shared<Tensor<T>>(grad_a_data, grad_out->shape);
+
+            if (!parent_input->grad) {
+                parent_input->grad = grad_a;
             } else {
                 for (int i = 0; i < parent_input->size; ++i) {
-                    parent_input->grad->data[i] += grad_a.data[i];
+                    parent_input->grad->data[i] += grad_a->data[i];
                 }
             }
             if (parent_input->grad_fn) {
@@ -31,28 +33,29 @@ struct ReluBackward : public Function<T> {
             }
         }
     }
-    std::vector<Tensor<T>*> parents;
 };
 
 template<typename T>
 struct TanhBackward : public Function<T> {
-    Tensor<T>* parent_input;
-    Tensor<T>* parent_output;
+    std::shared_ptr<Tensor<T>> parent_input;
+    std::shared_ptr<Tensor<T>> parent_output;
 
-    TanhBackward(Tensor<T>* a, Tensor<T>* b) : parent_input(a), parent_output(b) {}
+    TanhBackward(std::shared_ptr<Tensor<T>> a, std::shared_ptr<Tensor<T>> b) : parent_input(a), parent_output(b) {}
 
-    void backward(const Tensor<T>& grad_out) override {
+    void backward(std::shared_ptr<Tensor<T>> grad_out) override {
         if (parent_input->requires_grad) {
-            std::vector<T> grad_a_data(grad_out.size);
-            for (int i = 0; i < grad_out.size; ++i) {
-                grad_a_data[i] = grad_out.data[i] * (1.0 - (parent_output->data[i] * parent_output->data[i]));
+            auto grad_a_data = std::vector<T>(grad_out->size);
+            for (int i = 0; i < grad_out->size; ++i) {
+                grad_a_data[i] = grad_out->data[i] * (static_cast<T>(1) - (parent_output->data[i] * parent_output->data[i]));
             }
-            Tensor<T> grad_a(grad_a_data, grad_out.shape);
-            if (parent_input->grad == nullptr) {
-                parent_input->grad = new Tensor<T>(grad_a.data, grad_a.shape);
+            
+            auto grad_a = std::make_shared<Tensor<T>>(grad_a_data, grad_out->shape);
+
+            if (!parent_input->grad) {
+                parent_input->grad = grad_a;
             } else {
                 for (int i = 0; i < parent_input->size; ++i) {
-                    parent_input->grad->data[i] += grad_a.data[i];
+                    parent_input->grad->data[i] += grad_a->data[i];
                 }
             }
             if (parent_input->grad_fn) {
@@ -60,7 +63,6 @@ struct TanhBackward : public Function<T> {
             }
         }
     }
-    std::vector<Tensor<T>*> parents;
 };
 
 #endif
