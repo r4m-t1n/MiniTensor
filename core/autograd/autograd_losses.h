@@ -1,70 +1,78 @@
-#ifndef LOSSES_H
-#define LOSSES_H
+#ifndef AUTOGRAD_LOSSES_H
+#define AUTOGRAD_LOSSES_H
 
-#include <iostream>
-#include <stdexcept>
-#include "../tensors/tensor.h"
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <stdexcept>
+#include "tensors/tensor.h"
 
 template<typename T>
 struct MseLossBackward : public Function<T> {
-    MseLossBackward(Tensor<T>* y, Tensor<T>* y_hat) {
-        parents.push_back(y);
-        parents.push_back(y_hat);
-    }
-    void backward(const Tensor<T>& grad_out) override {
-        T n_elements = static_cast<T>(parents[0]->size);
-        if (parents[1]->requires_grad) {
-            std::vector<T> grad_y_hat_data(parents[1]->size);
-            for (int i = 0; i < parents[1]->size; ++i) {
-                grad_y_hat_data[i] = static_cast<T>(2) * (parents[1]->data[i] - parents[0]->data[i]) / n_elements;
+    std::shared_ptr<Tensor<T>> y_true, y_pred;
+
+    MseLossBackward(std::shared_ptr<Tensor<T>> y, std::shared_ptr<Tensor<T>> y_hat)
+        : y_true(y), y_pred(y_hat) {}
+
+    void backward(std::shared_ptr<Tensor<T>> grad_out) override {
+        if (y_pred->requires_grad) {
+            T n_elements = static_cast<T>(y_true->size);
+            auto grad_y_hat_data = std::vector<T>(y_pred->size);
+
+            for (int i = 0; i < y_pred->size; ++i) {
+                grad_y_hat_data[i] = grad_out->data[0] * static_cast<T>(2) * (y_pred->data[i] - y_true->data[i]) / n_elements;
             }
-            Tensor<T> grad_y_hat(grad_y_hat_data, parents[1]->shape);
-            if (parents[1]->grad == nullptr) {
-                parents[1]->grad = new Tensor<T>(grad_y_hat.data, grad_y_hat.shape);
+
+            auto grad_y_hat = std::make_shared<Tensor<T>>(grad_y_hat_data, y_pred->shape);
+
+            if (!y_pred->grad) {
+                y_pred->grad = grad_y_hat;
             } else {
-                for (int i = 0; i < parents[1]->size; ++i) {
-                    parents[1]->grad->data[i] += grad_y_hat.data[i];
+                for (int i = 0; i < y_pred->size; ++i) {
+                    y_pred->grad->data[i] += grad_y_hat->data[i];
                 }
             }
-            if (parents[1]->grad_fn) {
-                parents[1]->grad_fn->backward(grad_y_hat);
+
+            if (y_pred->grad_fn) {
+                y_pred->grad_fn->backward(grad_y_hat);
             }
         }
     }
-    std::vector<Tensor<T>*> parents;
 };
 
 template<typename T>
 struct MaeLossBackward : public Function<T> {
-    MaeLossBackward(Tensor<T>* y, Tensor<T>* y_hat) {
-        parents.push_back(y);
-        parents.push_back(y_hat);
-    }
-    void backward(const Tensor<T>& grad_out) override {
-        T n_elements = static_cast<T>(parents[0]->size);
-        if (parents[1]->requires_grad) {
-            std::vector<T> grad_y_hat_data(parents[1]->size);
-            for (int i = 0; i < parents[1]->size; ++i) {
-                T diff = parents[1]->data[i] - parents[0]->data[i];
-                grad_y_hat_data[i] = (diff > 0 ? 1.0 : (diff < 0 ? -1.0 : 0.0)) / n_elements;
+    std::shared_ptr<Tensor<T>> y_true, y_pred;
+
+    MaeLossBackward(std::shared_ptr<Tensor<T>> y, std::shared_ptr<Tensor<T>> y_hat)
+        : y_true(y), y_pred(y_hat) {}
+
+    void backward(std::shared_ptr<Tensor<T>> grad_out) override {
+        if (y_pred->requires_grad) {
+            T n_elements = static_cast<T>(y_true->size);
+            auto grad_y_hat_data = std::vector<T>(y_pred->size);
+
+            for (int i = 0; i < y_pred->size; ++i) {
+                T diff = y_pred->data[i] - y_true->data[i];
+                T sign = (diff > 0) ? static_cast<T>(1) : ((diff < 0) ? static_cast<T>(-1) : static_cast<T>(0));
+                grad_y_hat_data[i] = grad_out->data[0] * sign / n_elements;
             }
-            Tensor<T> grad_y_hat(grad_y_hat_data, parents[1]->shape);
-            if (parents[1]->grad == nullptr) {
-                parents[1]->grad = new Tensor<T>(grad_y_hat.data, grad_y_hat.shape);
+
+            auto grad_y_hat = std::make_shared<Tensor<T>>(grad_y_hat_data, y_pred->shape);
+
+            if (!y_pred->grad) {
+                y_pred->grad = grad_y_hat;
             } else {
-                for (int i = 0; i < parents[1]->size; ++i) {
-                    parents[1]->grad->data[i] += grad_y_hat.data[i];
+                for (int i = 0; i < y_pred->size; ++i) {
+                    y_pred->grad->data[i] += grad_y_hat->data[i];
                 }
             }
-            if (parents[1]->grad_fn) {
-                parents[1]->grad_fn->backward(grad_y_hat);
+
+            if (y_pred->grad_fn) {
+                y_pred->grad_fn->backward(grad_y_hat);
             }
         }
     }
-    std::vector<Tensor<T>*> parents;
 };
 
 #endif
