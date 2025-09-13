@@ -1,8 +1,8 @@
 #ifndef CONSTANT_VAL_H
 #define CONSTANT_VAL_H
 
-#include <random>
-#include <cmath>
+#include <vector>
+#include "tensors/tensor.h"
 
 template<typename T>
 class Constant_Val {
