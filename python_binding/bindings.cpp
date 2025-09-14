@@ -56,6 +56,7 @@ void define_bindings_for_type(py::module_& m, const std::string& type_name) {
 
      m_type.def("mse_loss", &mse_loss<T>);
      m_type.def("mae_loss", &mae_loss<T>);
+     m_type.def("bce_loss", &bce_loss<T>);
      m_type.def("relu", &relu<T>);
 
      py::class_<Constant_Val<T>, std::shared_ptr<Constant_Val<T>>>(m_type, "Constant").def(py::init<T>());

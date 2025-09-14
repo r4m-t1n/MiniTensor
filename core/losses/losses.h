@@ -3,5 +3,6 @@
 
 #include "mae.h"
 #include "mse.h"
+#include "bce.h"
 
 #endif
