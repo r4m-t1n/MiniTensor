@@ -10,7 +10,7 @@ template<typename T>
 class HeNormal {
 public:
     void initialize(Tensor<T>& weights) {
-        if (weights.data == nullptr || weights.ndim < 2) return;
+        if (!weights.data || weights.ndim < 2) return;
         size_t fan_in = weights.shape[1];
         double std_dev = std::sqrt(2.0 / fan_in);
 

@@ -10,7 +10,7 @@ template<typename T>
 class XavierUniform {
 public:
     void initialize(Tensor<T>& weights) {
-        if (weights.data == nullptr || weights.ndim < 2) return;
+        if (!weights.data || weights.ndim < 2) return;
 
         size_t fan_in = weights.shape[1];
         size_t fan_out = weights.shape[0];

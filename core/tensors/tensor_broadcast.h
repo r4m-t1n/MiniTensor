@@ -49,7 +49,7 @@ Tensor<T> expand_tensor(const Tensor<T>& tensor, const std::vector<int>& target_
             temp_i /= current_dim_size;
             original_index += coord * broadcast_strides[j];
         }
-        result.data[i] = tensor.data[original_index];
+        result.data[original_index] = tensor.data[i];
     }
 
     return result;
@@ -59,16 +59,16 @@ template<typename T>
 std::pair<Tensor<T>, Tensor<T>> broadcast(const Tensor<T>& a, const Tensor<T>& b) {
     std::vector<int> result_shape = broadcast_shape(a.shape, b.shape);
     Tensor<T> a_broadcasted = (a.shape == result_shape) ? Tensor<T>(
-        std::vector<T>(a.data, a.data + a.size), a.shape) : expand_tensor(a, result_shape);
+        std::vector<T>(a.data.get(), a.data.get() + a.size), a.shape) : expand_tensor(a, result_shape);
     Tensor<T> b_broadcasted = (b.shape == result_shape) ? Tensor<T>(
-        std::vector<T>(b.data, b.data + b.size), b.shape) : expand_tensor(b, result_shape);
+        std::vector<T>(b.data.get(), b.data.get() + b.size), b.shape) : expand_tensor(b, result_shape);
     
     return { std::move(a_broadcasted), std::move(b_broadcasted) };
 }
 
 template<typename T>
 Tensor<T> unbroadcast(const Tensor<T>& grad, const std::vector<int>& target_shape) {
-    auto current_grad = std::make_shared<Tensor<T>>(std::vector<T>(grad.data, grad.data + grad.size), grad.shape);
+    auto current_grad = std::make_shared<Tensor<T>>(std::vector<T>(grad.data.get(), grad.data.get() + grad.size), grad.shape);
 
     while (current_grad->ndim > target_shape.size()) {
         current_grad = sum(current_grad, 0);
@@ -79,7 +79,7 @@ Tensor<T> unbroadcast(const Tensor<T>& grad, const std::vector<int>& target_shap
             current_grad = sum(current_grad, i);
         }
     }
-    return Tensor<T>(std::vector<T>(current_grad->data, current_grad->data + current_grad->size), current_grad->shape);
+    return Tensor<T>(std::vector<T>(current_grad->data.get(), current_grad->data.get() + current_grad->size), current_grad->shape);
 }
 
 #endif

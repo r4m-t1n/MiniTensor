@@ -230,7 +230,7 @@ std::shared_ptr<Tensor<T>> sum(const std::shared_ptr<Tensor<T>>& tensor, int axi
     }
 
     auto result = std::make_shared<Tensor<T>>(result_shape, tensor->requires_grad);
-    std::fill(result->data, result->data + result->size, static_cast<T>(0));
+    std::fill(result->data.get(), result->data.get() + result->size, static_cast<T>(0));
 
     for(int i = 0; i < tensor->size; ++i) {
         int original_idx = i;
