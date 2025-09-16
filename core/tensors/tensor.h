@@ -23,7 +23,7 @@ struct Function {
 template<typename T>
 class Tensor : public std::enable_shared_from_this<Tensor<T>> {
 public:
-    T* data;
+    std::unique_ptr<T[]> data;
     std::vector<int> shape;
     int ndim;
     int size;
@@ -50,7 +50,7 @@ public:
         size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>());
         if (size <= 0) throw std::invalid_argument("ERROR: Dimension must be positive.");
         stride = compute_stride(shape, ndim);
-        data = new T[size]();
+        data = std::make_unique<T[]>(size);
     }
 
     Tensor(const std::vector<T>& data_vec, const std::vector<int>& shape, bool req_grad = false)
@@ -60,19 +60,15 @@ public:
         if (size <= 0) throw std::invalid_argument("ERROR: Dimension must be positive.");
         if (data_vec.size() != static_cast<size_t>(size)) throw std::invalid_argument("ERROR: Data size does not match shape size.");
         stride = compute_stride(shape, ndim);
-        data = new T[size];
-        std::copy(data_vec.begin(), data_vec.end(), data);
-    }
-    
-    ~Tensor() {
-        delete[] data;
+        data = std::make_unique<T[]>(size);
+        std::copy(data_vec.begin(), data_vec.end(), data.get());
     }
 
     Tensor(const Tensor&) = delete;
     Tensor& operator=(const Tensor&) = delete;
     
     Tensor(Tensor&& other) noexcept
-        : data(other.data),
+        : data(std::move(other.data)),
           shape(std::move(other.shape)),
           ndim(other.ndim),
           size(other.size),
@@ -81,13 +77,11 @@ public:
           grad(std::move(other.grad)),
           parents(std::move(other.parents)),
           grad_fn(std::move(other.grad_fn)) {
-        other.data = nullptr;
     }
 
     Tensor& operator=(Tensor&& other) noexcept {
         if (this != &other) {
-            delete[] data;
-            data = other.data;
+            data = std::move(other.data);
             shape = std::move(other.shape);
             ndim = other.ndim;
             size = other.size;
@@ -96,7 +90,6 @@ public:
             grad = std::move(other.grad);
             parents = std::move(other.parents);
             grad_fn = std::move(other.grad_fn);
-            other.data = nullptr;
         }
         return *this;
     }
@@ -105,7 +98,7 @@ public:
         if (this->size != other.size) {
             throw std::runtime_error("ERROR: set_data requires tensors of the same size.");
         }
-        std::copy(other.data, other.data + other.size, this->data);
+        std::copy(other.data.get(), other.data.get() + other.size, this->data.get());
     }
 
     void backward() {
@@ -123,7 +116,7 @@ public:
 
     void zero_grad() {
         if (grad != nullptr) {
-            std::fill(grad->data, grad->data + grad->size, static_cast<T>(0));
+            std::fill(grad->data.get(), grad->data.get() + grad->size, static_cast<T>(0));
         }
     }
 };
@@ -131,7 +124,7 @@ public:
 template<typename T>
 std::vector<T> to_vector(const Tensor<T>& tensor) {
     std::vector<T> data_vec(tensor.size);
-    std::copy(tensor.data, tensor.data + tensor.size, data_vec.begin());
+    std::copy(tensor.data.get(), tensor.data.get() + tensor.size, data_vec.begin());
     return data_vec;
 }
 
