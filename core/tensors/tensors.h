@@ -5,5 +5,6 @@
 #include "tensor_ops.h"
 #include "tensor_math.h"
 #include "tensor_broadcast.h"
+#include "tensors/tensor_reductions.h"
 
 #endif

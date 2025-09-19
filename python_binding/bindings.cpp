@@ -3,10 +3,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/operators.h>
-#include "tensors/tensor.h"
-#include "tensors/tensor_ops.h"
-#include "tensors/tensor_math.h"
-#include "tensors/tensor_reductions.h"
+#include "tensors/tensors.h"
 #include "losses/losses.h"
 #include "nn/activations/activations.h"
 #include "nn/layers/layers.h"
