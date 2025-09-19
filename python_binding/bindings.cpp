@@ -6,6 +6,7 @@
 #include "tensors/tensor.h"
 #include "tensors/tensor_ops.h"
 #include "tensors/tensor_math.h"
+#include "tensors/tensor_reductions.h"
 #include "losses/losses.h"
 #include "nn/activations/activations.h"
 #include "nn/layers/layers.h"
@@ -58,6 +59,10 @@ void define_bindings_for_type(py::module_& m, const std::string& type_name) {
      m_type.def("mae_loss", &mae_loss<T>);
      m_type.def("bce_loss", &bce_loss<T>);
      m_type.def("relu", &relu<T>);
+     m_type.def("sum", &sum<T>, py::arg("tensor"), py::arg("axis") = -1);
+     m_type.def("mean", &mean<T>, py::arg("tensor"), py::arg("axis") = -1);
+     m_type.def("max", &max<T>, py::arg("tensor"), py::arg("axis") = -1);
+     m_type.def("min", &min<T>, py::arg("tensor"), py::arg("axis") = -1);
 
      py::class_<Constant_Val<T>, std::shared_ptr<Constant_Val<T>>>(m_type, "Constant").def(py::init<T>());
 
