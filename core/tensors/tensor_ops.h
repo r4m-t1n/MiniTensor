@@ -8,7 +8,6 @@
 #include "tensor.h"
 #include "tensor_broadcast.h"
 #include "autograd/autograd_ops.h"
-#include "autograd/autograd_reduction.h"
 
 template<typename T>
 void check_tensor_validity(const std::shared_ptr<Tensor<T>>& a, const std::shared_ptr<Tensor<T>>& b) {
@@ -196,60 +195,6 @@ std::shared_ptr<Tensor<T>> mat_mul(const std::shared_ptr<Tensor<T>>& a, const st
     if (result->requires_grad) {
         result->parents = {a, b};
         result->grad_fn = std::make_unique<MatMulBackward<T>>(a, b);
-    }
-    return result;
-}
-
-template<typename T>
-std::shared_ptr<Tensor<T>> sum(const std::shared_ptr<Tensor<T>>& tensor, int axis = -1) {
-    if (axis < -1 || axis >= tensor->ndim) {
-        throw std::invalid_argument("ERROR: Invalid axis for sum operation.");
-    }
-
-    if (axis == -1) {
-        T total_sum = 0;
-        for (int i = 0; i < tensor->size; ++i) {
-            total_sum += tensor->data[i];
-        }
-        auto result = std::make_shared<Tensor<T>>(std::vector<T>{total_sum}, std::vector<int>{1}, tensor->requires_grad);
-        if (result->requires_grad) {
-            result->parents = {tensor};
-            result->grad_fn = std::make_unique<SumBackward<T>>(tensor, axis);
-        }
-        return result;
-    }
-
-    std::vector<int> result_shape;
-    for (int i = 0; i < tensor->ndim; ++i) {
-        if (i != axis) {
-            result_shape.push_back(tensor->shape[i]);
-        }
-    }
-    if (result_shape.empty()) {
-        result_shape.push_back(1);
-    }
-
-    auto result = std::make_shared<Tensor<T>>(result_shape, tensor->requires_grad);
-    std::fill(result->data.get(), result->data.get() + result->size, static_cast<T>(0));
-
-    for(int i = 0; i < tensor->size; ++i) {
-        int original_idx = i;
-        int result_idx = 0;
-        int multiplier = 1;
-        for(int j = tensor->ndim - 1; j >= 0; --j) {
-            int coord = original_idx % tensor->shape[j];
-            original_idx /= tensor->shape[j];
-            if(j != axis) {
-                result_idx += coord * multiplier;
-                multiplier *= tensor->shape[j];
-            }
-        }
-        result->data[result_idx] += tensor->data[i];
-    }
-    
-    if (result->requires_grad) {
-        result->parents = {tensor};
-        result->grad_fn = std::make_unique<SumBackward<T>>(tensor, axis);
     }
     return result;
 }
