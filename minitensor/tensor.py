@@ -1,6 +1,7 @@
 from typing import List
+import math
 
-from minitensor.backend import get_backend, is_dtype_valid
+from minitensor.backend import get_backend
 
 class Tensor:
     def __init__(self, data: List, shape: List[int], dtype: str, requires_grad: bool = False):
@@ -156,21 +157,54 @@ class Tensor:
             raise TypeError(f"ERROR: Unsupported operand type for /: 'Tensor' and '{type(other).__name__}'")
         return self._new_tensor(result, self.dtype, requires_grad)
 
-def tensor(data: list, shape: list = None, dtype: str = None, requires_grad: bool = False) -> Tensor:
-    if not data:
-        raise ValueError("ERROR: Data cannot be empty.")
+def _calculate_shape(data):
+    if not isinstance(data, list):
+        return []
+    shape = [len(data)]
+    if len(data) > 0:
+        sub_shape = _calculate_shape(data[0])
+        for item in data:
+            if _calculate_shape(item) != sub_shape:
+                raise ValueError("ERROR: All elements in a dimension must have the same shape.")
+        shape.extend(sub_shape)
+    return shape
+
+def _flatten_nested_list(data):
+    if not isinstance(data, list):
+        return [data]
+    flat_list = list()
+    for item in data:
+        flat_list.extend(_flatten_nested_list(item))
+    return flat_list
+
+def tensor(data, shape=None, dtype=None, requires_grad=False) -> Tensor:
+    if not isinstance(data, list) or not data:
+        raise ValueError("ERROR: Data must be a non-empty list.")
+
+    calculated_shape = []
+    flat_data = []
+
+    if shape is not None:
+        if any(isinstance(i, list) for i in data):
+             raise ValueError("ERROR: Cannot provide an explicit shape for a nested list.")
+
+        expected_elements = math.prod(shape)
+        if len(data) != expected_elements:
+            raise ValueError(f"ERROR: Shape {shape} requires {expected_elements} elements, but got {len(data)}.")
+
+        flat_data = data
+        calculated_shape = shape
+    else:
+        calculated_shape = _calculate_shape(data)
+        flat_data = _flatten_nested_list(data)
 
     if dtype is None:
-        first_el = data[0]
+        first_el = flat_data[0]
         if isinstance(first_el, int):
             dtype = "int32"
         elif isinstance(first_el, float):
             dtype = "float32"
         else:
-            raise TypeError("ERROR: Unsupported data type. Only int, float and double are supported.")
+            raise TypeError("ERROR: Unsupported data type. Only int and float are supported.")
 
-    if shape is None:
-        shape = [len(data)]
-
-    if is_dtype_valid(dtype):
-        return Tensor(data, shape, dtype, requires_grad)
+    return Tensor(flat_data, calculated_shape, dtype, requires_grad)
