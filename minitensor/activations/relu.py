@@ -1,7 +1,15 @@
-import os
-import sys
+from minitensor.model import Module
+from minitensor import Tensor
+from minitensor.backend import get_backend
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+class ReLU(Module):
+    def forward(self, x: Tensor) -> Tensor:
 
-class ReLU:
-    pass
+        backend = get_backend(x.dtype)
+
+        result = backend.relu(x._tensor)
+
+        return Tensor._new_tensor(result, x.dtype, x.requires_grad)
+
+    def __repr__(self) -> str:
+        return "ReLU()"
