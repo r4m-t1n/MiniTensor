@@ -1,8 +1,9 @@
 from typing import Generator, Optional
 from minitensor.backend import get_backend
 from minitensor import Tensor
+from minitensor.model import Module
 
-class Linear:
+class Linear(Module):
     def __init__(self,
         input_features: int,
         output_features: int,
