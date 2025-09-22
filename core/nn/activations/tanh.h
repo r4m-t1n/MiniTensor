@@ -3,7 +3,6 @@
 
 #include <cmath>
 #include <memory>
-#include <vector>
 #include "tensors/tensor.h"
 #include "autograd/autograd_activations.h"
 
