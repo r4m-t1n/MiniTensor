@@ -66,7 +66,7 @@ void define_bindings_for_type(py::module_& m, const std::string& type_name) {
      if constexpr (std::is_floating_point_v<T>) {
           m_type.def("tanh", &tanh_fn<T>);
           m_type.def("sigmoid", &sigmoid<T>);
-          m_type.def("softmax", &softmax<T>);
+          m_type.def("softmax", &softmax<T>, py::arg("tensor"), py::arg("axis") = -1);
           py::class_<HeNormal<T>, std::shared_ptr<HeNormal<T>>>(m_type, "HeNormal").def(py::init<>());
           py::class_<XavierUniform<T>, std::shared_ptr<XavierUniform<T>>>(m_type, "XavierUniform").def(py::init<>());
      }
