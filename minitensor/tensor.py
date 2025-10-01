@@ -75,6 +75,7 @@ class Tensor:
         new_python_tensor = cls.__new__(cls)
         new_python_tensor._tensor = result
         new_python_tensor.dtype = dtype
+        new_python_tensor.backend = get_backend(dtype)
         if requires_grad:
             new_python_tensor.requires_grad = True
         return new_python_tensor
