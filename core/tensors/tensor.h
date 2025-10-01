@@ -44,6 +44,17 @@ public:
         return stride;
     }
 
+    std::shared_ptr<Tensor<T>> reshape(const std::vector<int>& new_shape) {
+        int new_size = 1;
+        for(auto dim : new_shape) new_size *= dim;
+        if(new_size != this->size) {
+            throw std::runtime_error("ERROR: Reshape size mismatch.");
+        }
+        auto result = std::make_shared<Tensor<T>>(new_shape, this->requires_grad);
+        std::copy(this->data.get(), this->data.get() + this->size, result->data.get());
+        return result;
+    }
+
     Tensor(const std::vector<int>& shape, bool req_grad = false)
         : shape(shape), ndim(shape.size()), requires_grad(req_grad), grad(nullptr) {
         if (ndim < 1) throw std::invalid_argument("ERROR: Invalid shape.");
