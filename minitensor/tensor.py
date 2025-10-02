@@ -54,6 +54,15 @@ class Tensor:
             requires_grad = False 
             return self._new_tensor(self._tensor.grad, self.dtype, requires_grad)
         return None
+    
+    def reshape(self, *new_shape):
+        if len(new_shape) == 1 and isinstance(new_shape[0], (list, tuple)):
+            new_shape = new_shape[0]
+
+        new_shape = list(map(int, new_shape))
+
+        result = self._tensor.reshape(new_shape)
+        return self._new_tensor(result, self.dtype, self.requires_grad)
 
     def backward(self):
         self._tensor.backward()
@@ -155,7 +164,10 @@ class Tensor:
         return self._new_tensor(result, self.dtype, self._requires_grad(other))
 
     def __getitem__(self, idx):
-        return self._tensor.__getitem__(idx)
+        result = self._tensor.__getitem__(idx)
+        if isinstance(result, type(self._tensor)):
+            return self._new_tensor(result, self.dtype, self.requires_grad)
+        return result
 
 def _calculate_shape(data):
     if not isinstance(data, list):

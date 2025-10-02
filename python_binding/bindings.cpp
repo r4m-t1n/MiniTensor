@@ -33,6 +33,10 @@ void define_bindings_for_type(py::module_& m, const std::string& type_name) {
           .def("to_vector", &to_vector<T>)
           .def("to_nested", &to_nested_wrapper<T>)
           .def("set_data", &Tensor<T>::set_data, py::arg("other"))
+          .def("reshape", [](std::shared_ptr<Tensor<T>> t, const std::vector<int>& new_shape) {
+               return t->reshape(new_shape);
+          }, py::arg("new_shape"))
+
 
           .def("__repr__", &tensor_repr<T>)
 
