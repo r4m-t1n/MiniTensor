@@ -176,4 +176,26 @@ std::string tensor_repr(const Tensor<T>& t) {
 
     return "<Tensor dtype=" + dtype_name + " shape=" + shape_str + ">";
 }
+
+template<typename T>
+pybind11::object getitem(std::shared_ptr<Tensor<T>> t, pybind11::object idx) {
+    if (pybind11::isinstance<pybind11::int_>(idx)) {
+        int i = idx.cast<int>();
+        if (i < 0 || i >= t->shape[0]) {
+            throw std::out_of_range("Index out of range");
+        }
+        if (t->ndim == 1) {
+            return pybind11::cast(t->data[i]);
+        } else {
+            int step = t->stride[0];
+            std::vector<int> new_shape(t->shape.begin() + 1, t->shape.end());
+            int size = std::accumulate(new_shape.begin(), new_shape.end(), 1, std::multiplies<int>());
+            std::vector<T> new_data(size);
+            std::copy(t->data.get() + i * step, t->data.get() + (i + 1) * step, new_data.begin());
+            return pybind11::cast(std::make_shared<Tensor<T>>(new_data, new_shape, t->requires_grad));
+        }
+    }
+    throw std::invalid_argument("Invalid index type for tensor");
+}
+
 #endif

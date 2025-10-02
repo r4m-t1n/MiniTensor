@@ -50,7 +50,9 @@ void define_bindings_for_type(py::module_& m, const std::string& type_name) {
           .def("__radd__", [](std::shared_ptr<Tensor<T>> a, T scalar) { return tensor_scalar_add(a, scalar); })
           .def("__rsub__", [](std::shared_ptr<Tensor<T>> a, T scalar) { return scalar_tensor_sub(scalar, a); })
           .def("__rmul__", [](std::shared_ptr<Tensor<T>> a, T scalar) { return tensor_scalar_mul(a, scalar); })
-          .def("__rtruediv__", [](std::shared_ptr<Tensor<T>> a, T scalar) { return scalar_tensor_div(scalar, a); });
+          .def("__rtruediv__", [](std::shared_ptr<Tensor<T>> a, T scalar) { return scalar_tensor_div(scalar, a); })
+
+          .def("__getitem__", [](std::shared_ptr<Tensor<T>> t, py::object idx) { return getitem<T>(t, idx); });
 
      m_type.def("mse_loss", &mse_loss<T>);
      m_type.def("mae_loss", &mae_loss<T>);
