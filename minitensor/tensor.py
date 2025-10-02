@@ -20,6 +20,10 @@ class Tensor:
 
         self._tensor = self.backend.Tensor(data, shape, requires_grad)
 
+    def sum(self, axis: int=-1):
+        result = self.backend.sum(self._tensor, axis)
+        return self._new_tensor(result, self.dtype, self.requires_grad)
+
     @property
     def shape(self) -> tuple:
         return tuple(self._tensor.shape)
@@ -149,6 +153,9 @@ class Tensor:
         else:
             raise TypeError(f"ERROR: Unsupported operand type for /: 'Tensor' and '{type(other).__name__}'")
         return self._new_tensor(result, self.dtype, self._requires_grad(other))
+
+    def __getitem__(self, idx):
+        return self._tensor.__getitem__(idx)
 
 def _calculate_shape(data):
     if not isinstance(data, list):
