@@ -2,6 +2,7 @@ build/
 CMakeFiles/
 __pycache__/
 minitensor.egg-info/
+.vscode/
 dist/
 *.so
 *.o
